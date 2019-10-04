@@ -1,0 +1,132 @@
+local uqt = require("ubiquitousse")
+local scene = uqt.scene
+
+local entities = require("entities")
+local input = require("input")
+
+local ending = scene.new("platlevel")
+entities:reset(ending)
+
+-- load all the sounds !
+local soundFiles = {
+	"bidboum.ogg", "breakbrokebroken.ogg", "butter.ogg", "carton2.ogg", "carton3.ogg",
+	"carton4.ogg", "carton5.ogg", "carton.ogg", "chips.ogg", "coin1.ogg", "coin2.ogg",
+	"coin3.ogg", "coin4.ogg", "coin5.ogg", "coin6.ogg", "coin7.ogg", "gameover1.wav",
+	"gameover2.wav", "gameover3.wav", "gameover4.wav", "gameover5.wav", "graze1.ogg",
+	"graze2.ogg", "groscarton.ogg", "humanscream2.ogg", "humanscream3.ogg", "humanscream.ogg",
+	"laser.ogg", "manycoins1.ogg", "manycoins2.ogg", "manycoins3.ogg", "manycoins4.ogg",
+	"modelm2.wav", "momie1.ogg", "momie2.ogg", "momie3.ogg", "newspace.wav",
+	"normalzombiescream.ogg", "ouch10.ogg", "ouch11.ogg", "ouch12.ogg", "ouch1.ogg",
+	"ouch2.ogg", "ouch3.ogg", "ouch4long.ogg", "ouch5.ogg", "ouch6.ogg", "ouch7.ogg", "ouch8.ogg",
+	"ouch9.ogg", "ouchp1.ogg", "ouchp2.ogg", "ouchp3.ogg",
+	"saut1.ogg", "saut2.ogg", "saut3.ogg", "saut4.ogg", "saut5.ogg", "saut6.ogg", "saut7.ogg",
+	"sellerscream.ogg", "short_placeholder.wav", "touchdown1.ogg",
+	"touchdown2.ogg", "touchdown3.ogg", "touchdown4.ogg", "toudim.wav", "wilhelmscream.ogg",
+	"youlost.wav", "zombiescream2.ogg", "zombiescream.ogg"
+}
+local sounds = {}
+for i=1, #soundFiles do
+	sounds[i] = love.audio.newSource("asset/audio/"..soundFiles[i], "static")
+end
+
+local earth = love.graphics.newImage("asset/sprite/earth.png")
+local normalQuad = love.graphics.newQuad(0, 0, 1280, 720, 2560, 720)
+local explodedQuad = love.graphics.newQuad(1280, 0, 1280, 720, 2560, 720)
+
+function ending:enter()
+	entities.find("inventory").remove = true
+	entities.find("spacebar").remove = true
+	entities.find("spacestack").remove = true
+
+	local zik = love.audio.newSource("asset/audio/Hello_new_friend_farewell_Earth.ogg", "static")
+	 zik:setLooping(true)
+	 zik:play()
+	function ending:exit()
+		 zik:stop()
+	end
+	function ending:suspend()
+		 zik:stop()
+	end
+	function ending:resume()
+		entities.set(ending)
+		 zik:play()
+	end
+
+	local epilogue = {
+		"S. O. Nic and his not-so-evil twin then lived an happy constant-butter-running life.",
+		"Nothing bad could ever happen. Not even the Earth exploding some seconds after.",
+		"Or could it ?"
+	}
+
+	local livedHappy = require("entity") {
+		hud = true,
+		x = 0,
+		y = math.random(50, 670),
+
+		textStep = 1,
+		fade = 0,
+		fadeIn = true,
+
+		draw = function(self)
+			local shift = (self.fadeIn and self.fade) or (10 - self.fade)
+			shift *= 2
+			shift *= (self.textStep%2 == 0) and -1 or 1
+			love.graphics.setFont(font.LemonMilk[24])
+			love.graphics.setColor(1,1,1,self.fade)
+			love.graphics.print(epilogue[self.textStep], (1280-font.LemonMilk[24]:getWidth(epilogue[self.textStep]))/2 + shift, self.y)
+		end,
+
+		update = function(self, dt)
+			if self.fadeIn then
+				self.fade += math.abs(dt)*2
+			else
+				self.fade -= dt*2
+			end
+			if self.fade > 5 and self.fadeIn then
+				self.fadeIn = false
+			elseif self.fade <= 0 and not self.fadeIn then
+				self.fadeIn = true
+				self.textStep += 1
+				self.y = math.random(50, 670)
+			end
+			if not epilogue[self.textStep] then
+				self.remove = true
+			end
+		end
+	}:new()
+
+	local earthPlode
+	uqt.scene.current.time.run(function()
+		earthPlode = require("entity") {
+			hud = true,
+			x = 0,
+			y = 0,
+			exploded = false,
+
+			draw = function(self)
+				love.graphics.draw(earth, self.exploded and explodedQuad or normalQuad, self.x, self.y)
+			end
+		}:new()
+	end):after(15000)
+	uqt.scene.current.time.run(function()
+		earthPlode.exploded = true
+		for i=1, #sounds do
+			sounds[i]:play()
+		end
+	end):after(16000)
+	uqt.scene.current.time.run(function()
+		earthPlode.remove = true
+	end):after(17000)
+
+	uqt.scene.current.time.run(function()
+		require("entity.hud.achievement"):new("Everything makes sense now", love.graphics.newImage("asset/sprite/achievements/theend.png"))
+		theend = require("entity") {
+			draw = function(self)
+				love.graphics.setFont(font.LemonMilk[94])
+				love.graphics.print("-- The End --", (1280-font.LemonMilk[94]:getWidth("-- The End --"))/2, (720-font.LemonMilk[94]:getHeight("~~ The End ~~"))/2)
+			end
+		}:new()
+	end):after(20000)
+end
+
+return ending

@@ -1,0 +1,1129 @@
+--[[
+Anselme quick reference
+=======================
+
+Anselme will read script files line per line, starting from the start of the file.
+Every line can have children: a new line prefixed with a tabulation, or more if it's a children of a children, and so on.
+Anselme will automatically read the top-level lines. Children reading will be decided by their parents.
+
+Lines types and their properties
+--------------------------------
+* Lines starting with a character which isn't listed below are text. They will be said out loud. Text formatting apply.
+	Example: Hello world!
+	No children.
+	.seen: number of times the line has been read before
+* Lines starting with ( are comments.
+	Example: (Important comment)
+	Their children are never read nor parsed, so it can be used for multiline comments.
+	No default variables.
+* Lines starting with § are paragraphs. A paragraph can have parameters, between parantheses and seperated by commas. Parantheses can be ommited if there are no parameters.
+	Example: § the start of the adventure (hero name, size of socks collection)
+	Their children are only read after a redirection to this paragraph.
+	.seen: number of times the line has been read before
+	.used: number of times the paragraph has been redirected to before
+	.return: the return value of the paragraph. See Functions.
+* Lines starting with > are choices. The play can choose between this choice and every immediately following choice line. Text formatting apply.
+	Example: > Yes.
+	         	Neat.
+	         > No.
+	            I'm sad now.
+	Its children will be read if the player select this choice.
+	.seen: number of times the line has been read before
+	.used: number of times the choice has been selected before before
+* Lines starting with : are variable definition. They will define and set to a specific value a currently undefined variable, which is searched in the closest paragraph only. They will always be run at compile time.
+	Example: :(variable*2) variableSquared
+	No children.
+	No default variables.
+* Lines starting with =, +, -, *, /, %, ^, !, &, | are variable assignements. They will change the value of a variable, searched as described in Variables.
+	Example: +1 life point
+	No children.
+	No default variables.
+* Lines starting with ~ are redirections. They usually instruct the game to go to a specific paragraph (see Paragraph selection) and resume reading, but they will in practive evaluate any expression given to them. If the expression returns a paragraph, it will automatically be called.
+	Example: ~ the start of the adventure ("John Pizzapone", 9821)
+	Their children will be run only if the paragraph returns a truthy value.
+	.seen: number of times the line has been read before
+	.used: number of times the redirected paragraph has returned true before
+* Lines starting with ~~ are elseredirection. They behave similarly to redirection, but need to be immediately preceded by another redirection or elseredirection. They are only read if the previous redirection did not return a true value. That's an if-elseif. If no condition is specified, will imply true. That's an else.
+	Example: ~ life point > 5
+	         	Life is good
+	         ~~
+	         	NOT GOOD ENOUGH
+	Their children will be run if the condition is satisfied.
+	.seen: number of times the line has been read before
+	.used: number of times the condition has been met before
+
+Line decorators
+---------------
+Every line can be suffixed with a ~ and a following condition.
+
+Text formatting
+---------------
+If they end with \ they will not print a newline.
+Stuff inside braces { } will be replaced with the associated expression content. If the expression returns a paragraph, it will automatically be called.
+
+Expressions
+-----------
+A formula. Available operators: &, | (boolean and, or), ! (boolean not), +, -, *, /, %, ^ (arithmetic), >, <, >=, <= (comparaison), =, != (value (in)equality).
+Unusual operators:
+	-string will reverse the string
+	string + string/number will concatenate
+	string - number will returns everything before/after the last/first number characters
+	string - string will remove every string from the string
+	string * number will repeat the string
+	string / number will returns the last/first number characters
+	string/number % string/number will returns the position of string in string if found, no if not found
+	string/number ^ boolean will uppercase/lowercase the string
+	paragraph > number/string: will compare every variable of the paragraph and return true if it was always true. Same for <, >= and <=.
+Parantheses can be used for priority management.
+False values: 0. Everything else is true, including the string "0".
+Variables can be used by writing their name. Easy.
+
+Variables
+---------
+Anselme will first look for global variables, then from the current line to the top-level paragraph.
+Variables names can contain every character except . { } § > < ( ) ~ + - * / % ^ = ! & | : ,. Spaces are allowed.
+Value type: number (0, 1, ...), string ("Text"), paragraph, enginefunctions.
+Aliases: no = 0, yes = 1. Variables need to be defined first.
+Note that paragraph variables are only references to paragraphes and won't be searched when selecting a paragraph.
+enginefunctions are the functions defined by the engine.
+
+Functions
+---------
+Paragraphs can be used like functions. Use (var1, var2) to specify parameters in the paragraph definition. Theses variables will be set in the paragraph when it is called.
+When called in an expression, the paragraph will return the value of its return variable (which is set to 0 before each call).
+
+Paragraph selection
+-------------------
+When using redirections, you need to select a paragraph.
+Anselme will search for engine-defined paragraphs variables first, then top-level paragraphs, then search from the current indentation level up to the top-level.
+You can select sub-paragraphs using a . between the parent paragraph name and its children, and so on.
+
+Engine defined functions
+------------------------
+Functions (same as paragraphs) can be defined by the game engine. These always will be searched first. See Anselme's API on how to add them. Some engine functions are defined by default:
+	len(string): to get a string's length
+	gsub(string, pattern, repl, n): litteraly string.gsub
+	random(start, end): litteraly math.random
+
+TODO: test/check redirections consistency/coverage, load from directory
+TODO: save
+]]
+
+let VERSION = "0.2.0"
+
+--- Recurring paterns: full variable name
+let pvariable = "[^%{%}%§%>%<%(%)%~%+%-%*%/%%%=%!%&%|%:%^%,]*[^%{%}%§%>%<%(%)%~%+%-%*%/%%%=%!%&%|%:%^%,%s]+"
+
+--- Operators priority
+let binopPriority = {
+	["|"] = 0,
+	["&"] = 1,
+	["<"] = 2, [">"] = 2, ["<="] = 2, [">="] = 2, ["!="] = 2, ["="] = 2,
+	["+"] = 3, ["-"] = 3,
+	["*"] = 4, ["/"] = 4, ["%"] = 4,
+	["^"] = 6
+}
+let unopPriority = {
+	["!"] = 5, ["-"] = 5
+}
+
+--- Load a Anselme file.
+let anselme = (path)
+	-- Read file
+	let f = io.open(path, "r")
+	if not f then error("can't open file \""..tostring(path).."\"") end
+
+	-- Root element
+	let root = {
+		-- stuff which will still be useful later
+		type = "root",
+		parent = nil, -- parent element
+		children = {}, -- nil if the element shouldn't have children
+		parentParagraph = nil, -- closest parent paragraph
+		childrenParagraphs = {}, -- list of closest children paragraph (only defined on paragraphs and root)
+		condition = nil, -- condition expression if the line has been decorated with a condition
+		variables = {}, -- variable map
+		-- parsing information
+		ignoreChildren = nil, -- true if children shouldn't be parsed
+		paragraph = nil, -- true if it is a paragraph
+		noInsert = nil, -- truf if the element shouldn't be inserted into its parent
+		-- debug information
+		line = 0
+	}
+
+	-- Engine functions
+	let engineRegistry = {
+		len = (str)
+			return utf8.len(str)
+		end,
+		gsub = (str, pattern, repl, n)
+			return string.gsub(str, pattern, repl, n)
+		end,
+		random = (s, e)
+			return math.random(s, e)
+		end
+	}
+
+	--## Runtime functions ##--
+	let expression, findParagraph, findVariable, eval, formatText, run
+
+	--- Read an expression at the start of a string, returns the expression AST and the remaining string
+	expression = (context, str, operatingOn, minPriority=0)
+		-- Sweep sweep sweep
+		str = str:match("^%s*(.-)$")
+
+		--    VALUES    --
+		-- (requiredly) --
+		if not operatingOn then
+			-- Litteraly nothing
+			if str == "" then
+				error("unexpected empty expression; at line "..tostring(context.line))
+			-- String
+			elseif str:match("^\"") then
+				let string, remaining = str:match("^\"([^\"]*)\"(.*)$")
+				return expression(context, remaining, {
+					type = "string",
+					value = string
+				}, minPriority)
+			-- Integer
+			elseif str:match("^%d+") then
+				let number, remaining = str:match("^(%d+)(.*)$")
+				return expression(context, remaining, {
+					type = "number",
+					value = tonumber(number)
+				}, minPriority)
+			-- Float
+			elseif str:match("^%d*%.%d+") then
+				let number, remaining = str:match("^(%d%.%d+)(.*)$")
+				return expression(context, remaining, {
+					type = "number",
+					value = tonumber(number)
+				}, minPriority)
+			-- Unary operators
+			elseif str:match("^[%!%-]") then
+				let op, remaining = str:match("^([%!%-])(.*)$")
+				-- Copy pasted from the binary operators code. Should not be needed since unary operators are supposed to have the highest priority, but you never know!
+				-- UPDATE: added exponentiation operator with higher priority. Thanks, past self.
+				-- Higher priority, ie need to be deeper in the AST
+				if unopPriority[op] >= minPriority then
+					let exp, remaining, lowerPriorityOp = expression(context, remaining, nil, unopPriority[op])
+					let unop = {
+						type = "u"..op,
+						expression = exp
+					}
+					if lowerPriorityOp then -- lower priority op handling
+						return expression(context, remaining, unop, minPriority)
+					else
+						return unop, remaining
+					end
+				-- Return but notice there is a lower priority operator remaining (so it's handled higher)
+				else
+					return exp, str, true
+				end
+			-- Parantheses
+			elseif str:match("^%(") then
+				let content, remaining = str:match("^(%b())(.*)$")
+				let exp, premaining = expression(context, content:match("^%((.*)%)$"), nil)
+				if premaining:match("[^%s]") then
+					error("something in parantheses can't be read as an expression; at line "..tostring(context.line))
+				end
+				return expression(context, remaining, {
+					type = "parantheses",
+					expression = exp
+				}, minPriority)
+			-- Boolean
+			elseif str:match("^yes") then
+				let remaining = str:match("^yes(.*)$")
+				return expression(context, remaining, {
+					type = "number",
+					value = 1
+				}, minPriority)
+			elseif str:match("^no") then
+				let remaining = str:match("^no(.*)$")
+				return expression(context, remaining, {
+					type = "number",
+					value = 0
+				}, minPriority)
+			-- Everything with leters in it, ie variable
+			elseif str:match("^"..pvariable) then
+				let var, remaining = str:match("^("..pvariable..")(.*)$")
+				return expression(context, remaining, {
+					type = "variable",
+					address = [for s in var:gmatch("([^.]*)") do s end]
+				}, minPriority)
+			end
+
+		-- OPERATORS  --
+		-- (possibly) --
+		else
+			-- This is the point where I stopped writing code and pondered for a minute what the fuck was I doing. Heh.
+			if str:match("^<=") or str:match("^>=") or str:match("^!=") or str:match("^[%&%|%+%-%*%/%%%<%>%=%^]") then
+				let op, remaining
+				if str:match("^[%&%|%+%-%*%/%%%<%>%=%^]") then
+					op, remaining = str:match("^([%&%|%+%-%*%/%%%<%>%=%^])(.*)$")
+				else
+					op, remaining = str:match("^([<>!])=(.*)$")
+					op =.. "="
+				end
+				-- Higher priority, ie need to be deeper in the AST
+				if binopPriority[op] >= minPriority then
+					let rightVal, remaining, lowerPriorityOp = expression(context, remaining, nil, binopPriority[op])
+					let binop = {
+						type = "b"..op,
+						left = operatingOn,
+						right = rightVal
+					}
+					if lowerPriorityOp then -- lower priority op handling
+						return expression(context, remaining, binop, minPriority)
+					else
+						return binop, remaining
+					end
+				-- Return but notice there is a lower priority operator remaining (so it's handled higher)
+				else
+					return operatingOn, str, true
+				end
+			-- Function call
+			elseif str:match("^%(") then
+				let content, remaining = str:match("^(%b())(.*)$")
+				content = content:match("^%((.*)%)$")
+				let args = {}
+				while content:match("[^%s]") do
+					let exp
+					exp, content = expression(context, content, nil)
+					table.insert(args, exp)
+					if content:match("^%s*,%s*") then
+						content = content:match("^%s*,%s*(.*)$")
+					elseif content:match("[^%s]") then
+						error("something in function parameters can't be read as an expression; at line "..tostring(context.line))
+					end
+				end
+				return expression(context, remaining, {
+					type = "call",
+					expression = operatingOn,
+					arguments = args
+				}, minPriority)
+			else
+				return operatingOn, str -- no operator apparently
+			end
+		end
+
+		-- Yay, we shouldn't be here.
+		error("the expression parser just gave up; at line "..tostring(lineno))
+	end
+
+	--- Find a explicitely delcared subparagraph in a paragraph, return nil if not found.
+	findParagraph = (parent, address, depth=1)
+		for _, p in ipairs(parent.childrenParagraphs) do
+			if p.name == address[depth] then
+				if depth < #address then
+					return findParagraph(p, address, depth+1)
+				else
+					return p
+				end
+			end
+		end
+		return nil
+	end
+
+	--- Find a variable in any line
+	-- Return nil if the variable parent paragraph could not be found.
+	-- Return nil, paragraph if the variable wasn't found but the paragraph was.
+	-- Return var, paragraph if it was found.
+	findVariable = (parent, address)
+		-- Paragraph
+		let par = findParagraph((parent.type == "paragraph" or parent.type == "root") and parent or parent.parentParagraph, address)
+		if par then
+			return par, par.parentParagraph
+		end
+		-- Other
+		if #address > 1 then
+			let pAddr = [for i=1, #address-1, 1 do address[i] end]
+			parent = findParagraph((parent.type == "paragraph" or parent.type == "root") and parent or parent.parentParagraph, pAddr)
+			if not parent then
+				return nil
+			end
+		end
+		for var, val in pairs(parent.variables) do
+			if var == address[#address] then
+				return val, parent
+			end
+		end
+		return nil, parent
+	end
+
+	--- Evaluate an expression
+	eval = (context, exp)
+		let remain = ""
+		if type(context) == "string" and exp == nil then
+			context, exp, remain = root, expression(context, context)
+		end
+		if type(exp) == "string" then
+			exp, remain = expression(context, exp)
+		end
+		if remain:match("[^%s]") then
+			error("unexpected text in expression near \""..tostring(remain).."\"; at line "..tostring(context.line))
+		end
+
+		if exp.type == "number" then
+			return {
+				type = "number",
+				value = exp.value
+			}
+		elseif exp.type == "string" then
+			return {
+				type = "string",
+				value = exp.value
+			}
+		elseif exp.type == "variable" then
+			-- Search in registry
+			if engineRegistry[table.concat(exp.address, ".")] then
+				return {
+					type = "enginefunction",
+					value = engineRegistry[table.concat(exp.address, ".")]
+				}
+			else
+				-- Search in top level
+				let v = findVariable(root, exp.address)
+				if v then
+					return {
+						type = v.type,
+						value = v.value
+					}
+				else
+					-- Search from current to top level
+					let parentParagraph = context
+					while parentParagraph do
+						let v = findVariable(parentParagraph, exp.address)
+						if v then
+							return {
+								type = v.type,
+								value = v.value
+							}
+						end
+						parentParagraph = parentParagraph.parentParagraph
+					end
+					error("can't find the variable ("..tostring(table.concat(exp.address, ".")).."); at line "..tostring(context.line))
+				end
+			end
+		elseif exp.type == "parantheses" then
+			return eval(context, exp.expression)
+		elseif exp.type == "b+" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if (left.type == "string" and (right.type == "string" or right.type == "number")) or
+			   ((left.type == "number" or left.type == "string") and right.type == "string") then
+				return {
+					type = "string",
+					value = tostring(left.value) .. tostring(right.value)
+				}
+			elseif left.type == "number" and right.type == "number" then
+				return {
+					type = "number",
+					value = tonumber(left.value) + tonumber(right.value)
+				}
+			else
+				error("invalid value types for + operator: "..tostring(left.type).." + "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b-" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if left.type == "string" and right.type == "number" then
+				return {
+					type = "string",
+					value = tostring(left.value):sub(1, utf8.offset(left.value, utf8.len(left.value)-tonumber(right.value)))
+				}
+			elseif left.type == "number" and right.type == "string" then
+				return {
+					type = "string",
+					value = tostring(right.value):sub(utf8.offset(right.value, tonumber(left.value)+1))
+				}
+			elseif left.type == "number" and right.type == "number" then
+				return {
+					type = "number",
+					value = tonumber(left.value) - tonumber(right.value)
+				}
+			elseif left.type == "string" and right.type == "string" then
+				return {
+					type = "string",
+					value = tostring(left.value):gsub(tostring(right.value), "")
+				}
+			else
+				error("invalid value types for - operator: "..tostring(left.type).." - "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b*" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if left.type == "string" and right.type == "number" then
+				return {
+					type = "string",
+					value = tostring(left.value):rep(tonumber(right.value))
+				}
+			elseif left.type == "number" and right.type == "string" then
+				return {
+					type = "string",
+					value = tostring(right.value):rep(tonumber(left.value))
+				}
+			elseif left.type == "number" and right.type == "number" then
+				return {
+					type = "number",
+					value = tonumber(left.value) * tonumber(right.value)
+				}
+			else
+				error("invalid value types for * operator: "..tostring(left.type).." * "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b/" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if left.type == "string" and right.type == "number" then
+				return {
+					type = "string",
+					value = tostring(left.value):sub(utf8.offset(left.value, utf8.len(left.value)-tonumber(right.value)+1))
+				}
+			elseif left.type == "number" and right.type == "string" then
+				return {
+					type = "string",
+					value = tostring(right.value):sub(1, utf8.offset(right.value, tonumber(left.value)))
+				}
+			elseif left.type == "number" and right.type == "number" then
+				return {
+					type = "number",
+					value = tonumber(left.value) / tonumber(right.value)
+				}
+			else
+				error("invalid value types for / operator: "..tostring(left.type).." / "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b%" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if (left.type == "string" and right.type == "number") or (left.type == "number" and right.type == "string") then
+				return {
+					type = "number",
+					value = tostring(left.value):find(tostring(right.value)) or 0
+				}
+			elseif left.type == "number" and right.type == "number" then
+				return {
+					type = "number",
+					value = tonumber(left.value) % tonumber(right.value)
+				}
+			else
+				error("invalid value types for % operator: "..tostring(left.type).." % "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b^" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if left.type == "string" then
+				let s = tostring(left.value)
+				if right.value == 0 then
+					s = s:lower()
+				else
+					s = s:upper()
+				end
+				return {
+					type = "string",
+					value = s
+				}
+			elseif left.type == "number" and right.type == "number" then
+				return {
+					type = "number",
+					value = tonumber(left.value) ^ tonumber(right.value)
+				}
+			else
+				error("invalid value types for ^ operator: "..tostring(left.type).." ^ "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b>" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if (left.type == "number" or left.type == "string") and (right.type == "number" or right.type == "string") then
+				let v = left.value > right.value
+				return {
+					type = "number",
+					value = v and 1 or 0
+				}
+			elseif left.type == "paragraph" and (right.type == "number" or right.type == "string") then
+				let ok = true
+				for n, var in pairs(left.value.variables) do
+					if not var.default then
+						let r = eval(context, {
+							type = "b>",
+							left = var,
+							right = right
+						})
+						if r.value == 0 then
+							ok = false
+							break
+						end
+					end
+				end
+				return {
+					type = "number",
+					value = ok and 1 or 0
+				}
+			else
+				error("invalid value types for > operator: "..tostring(left.type).." > "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b<" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if (left.type == "number" or left.type == "string") and (right.type == "number" or right.type == "string") then
+				let v = left.value < right.value
+				return {
+					type = "number",
+					value = v and 1 or 0
+				}
+			elseif left.type == "paragraph" and (right.type == "number" or right.type == "string") then
+				let ok = true
+				for n, var in pairs(left.value.variables) do
+					if not var.default then
+						let r = eval(context, {
+							type = "b<",
+							left = var,
+							right = right
+						})
+						if r.value == 0 then
+							ok = false
+							break
+						end
+					end
+				end
+				return {
+					type = "number",
+					value = ok and 1 or 0
+				}
+			else
+				error("invalid value types for > operator: "..tostring(left.type).." > "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b>=" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if (left.type == "number" or left.type == "string") and (right.type == "number" or right.type == "string") then
+				let v = left.value >= right.value
+				return {
+					type = "number",
+					value = v and 1 or 0
+				}
+			elseif left.type == "paragraph" and (right.type == "number" or right.type == "string") then
+				let ok = true
+				for n, var in pairs(left.value.variables) do
+					if not var.default then
+						let r = eval(context, {
+							type = "b>=",
+							left = var,
+							right = right
+						})
+						if r.value == 0 then
+							ok = false
+							break
+						end
+					end
+				end
+				return {
+					type = "number",
+					value = ok and 1 or 0
+				}
+			else
+				error("invalid value types for > operator: "..tostring(left.type).." > "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b<=" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if (left.type == "number" or left.type == "string") and (right.type == "number" or right.type == "string") then
+				let v = left.value <= right.value
+				return {
+					type = "number",
+					value = v and 1 or 0
+				}
+			elseif left.type == "paragraph" and (right.type == "number" or right.type == "string") then
+				let ok = true
+				for n, var in pairs(left.value.variables) do
+					if not var.default then
+						let r = eval(context, {
+							type = "b<=",
+							left = var,
+							right = right
+						})
+						if r.value == 0 then
+							ok = false
+							break
+						end
+					end
+				end
+				return {
+					type = "number",
+					value = ok and 1 or 0
+				}
+			else
+				error("invalid value types for > operator: "..tostring(left.type).." > "..tostring(right.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "b=" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			let v = left.value == right.value
+			return {
+				type = "number",
+				value = v and 1 or 0
+			}
+		elseif exp.type == "b!=" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			let v = left.value ~= right.value
+			return {
+				type = "number",
+				value = v and 1 or 0
+			}
+		elseif exp.type == "b&" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if left.value ~= 0 then
+				return right
+			else
+				return left
+			end
+		elseif exp.type == "b|" then
+			let left, right = eval(context, exp.left), eval(context, exp.right)
+			if left.value ~= 0 then
+				return left
+			else
+				return right
+			end
+		elseif exp.type == "u!" then
+			let value = eval(context, exp.expression)
+			return {
+				type = "number",
+				value = value.value == 0 and 1 or 0
+			}
+		elseif exp.type == "u-" then
+			let value = eval(context, exp.expression)
+			if value.type == "number" then
+				return {
+					type = "number",
+					value = -tonumber(value.value)
+				}
+			elseif value.type == "string" then
+				return {
+					type = "string",
+					value = value.value:reverse()
+				}
+			else
+				error("invalid value types for - operator: "..tostring(value.type).."; at line "..tostring(context.line))
+			end
+		elseif exp.type == "call" then
+			-- Search function
+			let fn = eval(context, exp.expression)
+			if fn.type == "paragraph" then
+				-- Checks parameters
+				let p = fn.value
+				if #exp.arguments ~= #p.parameters then
+					error("function ("..tostring(p.name).."; at line "..tostring(p.line)..") expected "..tostring(#p.parameters).." parameters but received "..tostring(#exp.arguments).."; at line "..tostring(context.line))
+				end
+				for i, arg in ipairs(exp.arguments) do
+					p.variables[p.parameters[i]] = eval(context, arg)
+				end
+				-- Run function
+				p.variables["return"] = eval("0")
+				p.variables["return"].default = true
+				run(p.children)
+				p.variables.used.value += 1
+				return {
+					type = p.variables["return"].type,
+					value = p.variables["return"].value
+				}
+			elseif fn.type == "enginefunction" then
+				let args = {}
+				for i, arg in ipairs(exp.arguments) do
+					let val = eval(context, arg)
+					table.insert(args, val.value)
+				end
+				let ret = fn.value(unpack(args))
+				if ret == nil or ret == false then
+					return eval("no")
+				elseif ret == true then
+					return eval("yes")
+				elseif type(ret) == "number" then
+					return {
+						type = "number",
+						value = ret
+					}
+				elseif type(ret) == "string" then
+					return {
+						type = "number",
+						value = ret
+					}
+				elseif type(ret) == "function" then
+					return {
+						type = "enginefunction",
+						value = ret
+					}
+				else
+					error("invalid return type ("..type(ret)..") for engine function in expression; at line "..tostring(context.line))
+				end
+			else
+				error("tried to call a "..tostring(fn.type).." variable in an expression; at line "..tostring(context.line))
+			end
+		else
+			error("unkown expression ("..tostring(exp.type)..") to evaluate; at line "..tostring(context.line))
+		end
+	end
+
+	--- Format text
+	formatText = (context, text)
+		let r = text:gsub("{([^}]*)}", (exp)
+			let val = eval(context, exp)
+			if val.type == "paragraph" then -- run paragraph/function
+				let p = val.value
+				if #p.parameters > 0 then
+					error("paragraph returned by the expression expected "..tostring(#p.parameters).." parameters but received none; at line "..tostring(context.line))
+				end
+				p.variables["return"] = eval("0")
+				p.variables["return"].default = true
+				run(p.children)
+				p.variables.used.value += 1
+				val = p.variables["return"]
+			end
+			return tostring(val.value)
+		end)
+		if r:match("\\$") then
+			r = r:gsub("\\$", "")
+		else
+			r = r.."\n"
+		end
+		return r
+	end
+
+	--- Run a list of elements
+	run = (lines)
+		for _, line in ipairs(lines) do
+			-- Condition decorator
+			if line.condition then
+				if eval(line, line.condition).value == 0 then
+					continue
+				end
+			end
+			-- Run line
+			if line.type == "comment" then
+				-- pass
+			elseif line.type == "paragraph" then
+				line.variables.seen.value += 1
+			elseif line.type == "choices" then
+				let l = {}
+				for i, c in ipairs(line.children) do
+					if c.type ~= "choice" then error("expected a choice, got a "..tostring(c.type).."; somewhere in Anselme's internals, triggered by line "..tostring(line.line)) end
+					table.insert(l, formatText(c, c.text))
+					c.variables.seen.value += 1
+				end
+				let choice = coroutine.yield("choice", l)
+				if not choice then
+					error("no choice has been made by the engine, I don't know what to doooo")
+				end
+				let c = line.children[choice]
+				run(c.children)
+				c.variables.used.value += 1
+			elseif line.type == "definition" then
+				-- pass
+			elseif line.type == "assignement" then
+				-- Eval
+				let exp = eval(line, line.expression)
+				if line.operator ~= "=" then
+					exp = eval(line, {
+						type = "b"..line.operator,
+						left = {
+							type = "variable",
+							address = line.address
+						},
+						right = exp
+					})
+				end
+				-- Search in top level
+				let v, par = findVariable(root, line.address)
+				if not v then
+					-- Search from current to top level
+					let found = false
+					let parentParagraph = line.parentParagraph -- skip current line (no variables)
+					while parentParagraph do
+						v, par = findVariable(parentParagraph, line.address)
+						if v then
+							found = true
+							break
+						end
+						parentParagraph = parentParagraph.parentParagraph
+					end
+					if not found then
+						error("can't find the variable ("..tostring(table.concat(line.address, ".")).."); at line "..tostring(line.line))
+					end
+				end
+				-- Assign
+				if par.variables[line.address[#line.address]] then
+					par.variables[line.address[#line.address]] = {
+						type = exp.type,
+						value = exp.value
+					}
+				else
+					error("found the variable ("..tostring(table.concat(line.address, "."))..") to assign, but it's read only; at line "..tostring(line.line))
+				end
+			elseif line.type == "redirections" then
+				for i, c in ipairs(line.children) do
+					if i == 1 and c.type ~= "redirection" then
+						error("expected a redirection, got a "..tostring(c.type).."; somewhere in Anselme's internals, triggered by line "..tostring(line.line))
+					end
+					if i > 1 and c.type ~= "elseredirection" then
+						error("expected an elseredirection, got a "..tostring(c.type).."; somewhere in Anselme's internals, triggered by line "..tostring(line.line))
+					end
+					let val = eval(c, c.expression)
+					if val.type == "paragraph" then -- run paragraph/function
+						let p = val.value
+						if #p.parameters > 0 then
+							error("paragraph returned by the expression expected "..tostring(#p.parameters).." parameters but received none; at line "..tostring(context.line))
+						end
+						p.variables["return"] = eval("0")
+						p.variables["return"].default = true
+						run(p.children)
+						p.variables.used.value += 1
+						val = p.variables["return"]
+					end
+					c.variables.seen.value += 1
+					if val.value ~= 0 then
+						run(c.children)
+						c.variables.used.value += 1
+						break
+					end
+				end
+			elseif line.type == "text" then
+				coroutine.yield("text", formatText(line, line.text))
+				line.variables.seen.value += 1
+			else
+				error("element unkown to the runtime ("..tostring(line.type).."); at line "..tostring(line.line))
+			end
+		end
+	end
+
+	--## Parse file ##--
+	let parent = root -- current parent element
+	let parentParagraph = root -- closest parent paragraph
+	let lastParsed = nil -- last parsed element
+	let indent = 0 -- current indentation level
+	let lineno = 0 -- line number
+	for l in f:lines() do
+		lineno += 1
+
+		-- Indentation parse
+		let tabs, line = l:match("^(\t*)(.*)$")
+		if line == "" then continue end
+		let level = #tabs
+
+		-- Children. Childrenize!
+		if level == indent+1 and not parent.ignoreChildren then
+			indent += 1
+			parent = lastParsed
+			if parent.paragraph then
+				parentParagraph = parent
+			end
+			if not parent.children then
+				error("a line doesn't want children but was given some; at line "..tostring(lineno))
+			end
+		-- Uh... Unchildrenization ?
+		elseif level < indent then
+			while level < indent do
+				indent -= 1
+				if parent.paragraph then
+					parentParagraph = parentParagraph.parent
+				end
+				parent = parent.parent
+			end
+		-- Invalid childrenization.
+		elseif level ~= indent and not parent.ignoreChildren then
+			error("invalid indentation; at line "..tostring(lineno))
+		end
+
+		-- Staaaaaart parsing
+		if not parent.ignoreChildren then
+			let parsed = { -- element
+				type = "unknown",
+				parent = parent,
+				children = nil,
+				parentParagraph = parentParagraph,
+				childrenParagraphs = nil,
+				condition = nil,
+				variables = {},
+				ignoreChildren = nil,
+				paragraph = nil,
+				line = lineno
+			}
+			-- Condition decorator
+			if line:match("^%s*[^%~].*%~[^%~]+$") then
+				let l, c = line:match("^(%s*[^%~].*)%~([^%~]+)$")
+				let exp, rem = expression(parsed, c)
+				if rem:match("[^%s]") then
+					error("invalid condition decorator expression near \""..tostring(rem).."\"; at line "..tostring(lineno))
+				else
+					line = l
+					parsed.condition = exp
+				end
+			end
+			-- Comment
+			if line:match("^%(") then
+				parsed.type = "comment"
+				parsed.children = {}
+				parsed.ignoreChildren = true
+			-- Paragraph
+			elseif line:match("^§") then
+				parsed.type = "paragraph"
+				parsed.name = line:match("^§%s*(.-)%s*$")
+				parsed.parameters = {}
+				-- Parse parameters
+				if parsed.name:match("^.-%s*%(.-%)%s*$") then
+					let name, content = parsed.name:match("^(.-)%s*%((.-)%)%s*$")
+					parsed.name = name
+					for par in content:gmatch("[^,]*") do
+						let var = par:match("^%s*(.-)%s*$")
+						table.insert(parsed.parameters, var)
+						parsed.variables[var] = eval("0")
+					end
+				end
+				parsed.value = parsed -- paragraphs are variables themselves
+				parsed.paragraph = true
+				parsed.children = {}
+				parsed.variables.seen = eval("0")
+				parsed.variables.seen.default = true
+				parsed.variables.used = eval("0")
+				parsed.variables.used.default = true
+				parsed.variables["return"] = eval("0")
+				parsed.variables["return"].default = true
+			-- Choice
+			elseif line:match("^>") then
+				parsed.type = "choice"
+				parsed.text = line:match("^>%s*(.-)%s*$")
+				parsed.children = {}
+				parsed.variables.seen = eval("0")
+				parsed.variables.seen.default = true
+				parsed.variables.used = eval("0")
+				parsed.variables.used.default = true
+				-- Create virtual choices parent element - "It will make your life easier later... probably!"
+				if parent.children[#parent.children] == nil or parent.children[#parent.children].type ~= "choices" then
+					table.insert(parent.children, {
+						type = "choices",
+						parent = parent,
+						children = {},
+						parentParagraph = parentParagraph,
+						childrenParagraphs = nil,
+						condition = nil,
+						variables = {},
+						ignoreChildren = nil,
+						paragraph = nil,
+						noInsert = nil,
+						line = lineno
+					})
+				end
+				table.insert(parent.children[#parent.children].children, parsed)
+				parsed.noInsert = true
+			-- Variable definition
+			elseif line:match("^:") then
+				parsed.type = "definition"
+				parsed.expression, parsed.address = expression(parsed, line:match("^:%s*(.-)%s*$"))
+				parsed.address = parsed.address:match("^%s*(.-)$")
+				if not parsed.address:match("^"..pvariable.."$") then
+					error("unreasonably invalid variable name ("..tostring(parsed.address).."); at line "..tostring(lineno))
+				end
+				parsed.address = [for s in parsed.address:gmatch("([^.]*)") do s end]
+				-- Run at compile time
+				let var, par = findVariable(parsed.parentParagraph, parsed.address)
+				if not var then
+					if par then
+						par.variables[parsed.address[#parsed.address]] = eval(parsed, parsed.expression)
+					else
+						error("can't find variable ("..table.concat(parsed.address, ".").."), some paragraphs in the address don't exist (why are you specifying paragraphs in a definition anyway? that's not very readable); at line "..tostring(parsed.line))
+					end
+				else
+					error("trying to define a variable ("..table.concat(parsed.address, ".")..") which is already defined; at line "..tostring(parsed.line))
+				end
+			-- Variable assignements
+			elseif line:match("^[%=%+%-%*%/%%%!%^%&%|]") then
+				parsed.type = "assignement"
+				parsed.operator = line:match("^([%=%+%-%*%/%%%!%^%&%|])")
+				parsed.expression, parsed.address = expression(parsed, line:match("^[%=%+%-%*%/%%%!%^%&%|]%s*(.-)%s*$"))
+				parsed.address = parsed.address:match("^%s*(.-)$")
+				if not parsed.address:match("^"..pvariable.."$") then
+					error("unreasonably invalid variable name ("..tostring(parsed.address).."); at line "..tostring(lineno))
+				end
+				parsed.address = [for s in parsed.address:gmatch("([^.]*)") do s end]
+			-- Redirection
+			elseif line:match("^%~") then
+				parsed.children = {}
+				parsed.variables.seen = eval("0")
+				parsed.variables.seen.default = true
+				parsed.variables.used = eval("0")
+				parsed.variables.used.default = true
+				if not line:match("^%~%~") then
+					parsed.type = "redirection"
+					parsed.expression = expression(parsed, line:match("^%~%s*(.-)%s*$"))
+					-- Create virtual conditions element - "It may make your life easier at some ulterior date!"
+					table.insert(parent.children, {
+						type = "redirections",
+						parent = parent,
+						children = {},
+						parentParagraph = parentParagraph,
+						childrenParagraphs = nil,
+						condition = nil,
+						variables = {},
+						ignoreChildren = nil,
+						paragraph = nil,
+						noInsert = nil,
+						line = lineno
+					})
+					table.insert(parent.children[#parent.children].children, parsed)
+					parsed.noInsert = true
+				else
+					parsed.type = "elseredirection"
+					let cond = line:match("^%~%~%s*(.-)%s*$")
+					if cond == "" then cond = "yes" end
+					parsed.expression = expression(parsed, cond)
+					if parent.children[#parent.children] == nil or parent.children[#parent.children].type ~= "redirections" then
+						error("reached a ~~ else condition but, to the best of our knowledge, there's no ~ if redirection before it; at line "..tostring(lineno))
+					end
+					table.insert(parent.children[#parent.children].children, parsed)
+					parsed.noInsert = true
+				end
+			-- Presumption of text
+			else
+				parsed.type = "text"
+				parsed.text = line:match("^%s*(.-)%s*$")
+				parsed.variables.seen = eval("0")
+				parsed.variables.seen.default = true
+			end
+
+			if not parsed.noInsert then
+				parent = parsed.parent
+				table.insert(parent.children, parsed)
+			end
+
+			if parsed.paragraph then
+				parsed.childrenParagraphs = {}
+				table.insert(parentParagraph.childrenParagraphs, parsed)
+			end
+
+			lastParsed = parsed
+		end
+	end
+
+	--## Done ##--
+	return {
+		--- Debuging function: returns the AST
+		getAST = :()
+			return root
+		end,
+
+		--- Add an engine-defined function.
+		-- Name can be any string, and can contains . (the address doesn't check for paragraph's existence and bypass pretty much everything).
+		-- The function is a normal Lua function. It will be run inside Anselme's coroutine, so you may yield if you want.
+		--   Lua    |  Anselme type casting:
+		-- string  <->  string
+		-- number  <->  number
+		-- false    ->  0
+		-- true     ->  1
+		-- other    ->  ERROR
+		-- AST     <-   paragraph
+		-- function<->  enginefunction
+		-- So if you want to check the falseness of a Anselme's value from Lua, variable == 0.
+		registerFunction = :(name, func)
+			engineRegistry[name] = func
+		end,
+
+		--- Returns a wrapped coroutine that returns event, data each time it is called.
+		-- "text", message: text to display
+		-- "choice", {"option1","option2",..}: a choice. Anselme will expect the next call to have the chosed option indice as the first parameter.
+		-- "end", nil: end of the script
+		new = :()
+			return coroutine.wrap(()
+				run(root.children)
+				return "end"
+			end)
+		end
+	}
+end
+
+return anselme

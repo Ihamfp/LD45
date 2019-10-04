@@ -1,0 +1,69 @@
+local uqt = require("ubiquitousse")
+local scene = uqt.scene
+
+local entities = require("entities")
+local shine = require("shine")
+
+local Map = require("entity.map")
+-- local Power = require("entity.power")
+local BgParalax = require("entity.bgparalax")
+
+local start = scene.new("spuermarche")
+entities.reset(start)
+start.effect = shine.vignette{
+	radius = 1.4,
+	opacity = 0.3
+}
+start.score = {
+	maxSpeed = 0,
+	maxSpeedDuration = 0,
+	thingsKilled = 0,
+	maxTier = 1,
+	time = 0,
+	thingsGrazed = 0
+}
+
+function start:enter(power)
+	love.graphics.setBackgroundColor(0, 0, 0, 1)
+
+	-- local bg = BgParalax:new("bg"..power.unlockIn..".png")
+	local map = Map:new("asset/map/SuperMarche2-2.lua", { aboveAll = true })
+
+	local zik = love.audio.newSource("asset/audio/Peanut_Butter_Department.ogg", "static")
+	zik:setLooping(true)
+	zik:play()
+	function start:exit()
+		zik:stop()
+	end
+	function start:suspend()
+		zik:stop()
+	end
+	function start:resume()
+		entities.set(start)
+		zik:play()
+	end
+
+	entities.noSprites = true
+	local spriteLayer = map.map:addCustomLayer("Sprite Layer", 18)
+	spriteLayer.draw = ()
+		for _, v in ipairs(entities.list) do
+			if v.visible then v:draw(entities.dxV, entities.dyV, entities.sx, entities.sy) end
+		end
+	end
+
+	-- kept between scenes
+	-- local spacebar = require("entity.hud.spacebar"):new()
+	-- local spacestack = require("entity.hud.spacestack"):new()
+	-- local inventory = require("entity.hud.inventory"):new()
+
+	local achimg = love.graphics.newImage("asset/sprite/achievements/level0.png")
+	local achievement = require("entity.hud.achievement"):new("GAME (JAM) START", achimg)
+
+	local rect = require("entity.rectangle"):new(0, 0, 1280, 720, {
+		hud = true,
+		color = {0,0,0,1}
+	})
+	start.time.tween(500, rect.color, {[4]=0})
+end
+
+return start

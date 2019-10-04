@@ -1,0 +1,70 @@
+local uqt = require("ubiquitousse")
+local scene = uqt.scene
+
+local entities = require("entities")
+local shine = require("shine")
+
+local Map = require("entity.map")
+-- local Power = require("entity.power")
+local BgParalax = require("entity.bgparalax")
+
+local start = scene.new("reserve")
+entities.reset(start)
+start.effect = shine.vignette{
+	radius = 1.4,
+	opacity = 0.3
+}
+start.score = {
+	maxSpeed = 0,
+	maxSpeedDuration = 0,
+	thingsKilled = 0,
+	maxTier = 1,
+	time = 0,
+	thingsGrazed = 0
+}
+
+function start:enter(power)
+	love.graphics.setBackgroundColor(0, 0, 0, 1)
+
+	-- local bg = BgParalax:new("bg"..power.unlockIn..".png")
+	local map = Map:new("asset/map/Reserve1.lua")
+
+	local zik = love.audio.newSource("asset/audio/Space_Bar_Stock.ogg", "static")
+	zik:setLooping(true)
+	zik:play()
+	function start:exit()
+		zik:stop()
+	end
+	function start:suspend()
+		zik:stop()
+	end
+	function start:resume()
+		entities.set(start)
+		zik:play()
+	end
+
+	-- kept between scenes
+	-- local spacebar = require("entity.hud.spacebar"):new()
+	-- local spacestack = require("entity.hud.spacestack"):new()
+	-- local inventory = require("entity.hud.inventory"):new()
+
+	local achimg = love.graphics.newImage("asset/sprite/achievements/level1.png")
+	local achievement = require("entity.hud.achievement"):new("LEVEL -1", achimg)
+
+	local txt = require("entity.text"):new(font.LemonMilk[54], "Space Storage", 1280-50, 720-100, {
+		hud = true,
+		color = {1,1,1,1},
+		shadowColor = {0,0,0,1},
+		alignX = "right", alignY = "bottom"
+	})
+	start.time.tween(500, txt.color, {[4]=0}):after(2500)
+	start.time.tween(500, txt.shadowColor, {[4]=0}):after(2500)
+
+	local rect = require("entity.rectangle"):new(0, 0, 1280, 720, {
+		hud = true,
+		color = {0,0,0,1}
+	})
+	start.time.tween(500, rect.color, {[4]=0})
+end
+
+return start

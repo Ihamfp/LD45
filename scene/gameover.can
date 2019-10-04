@@ -1,0 +1,112 @@
+local uqt = require("ubiquitousse")
+local scene = uqt.scene
+
+local entities = require("entities")
+local input = require("input")
+
+local gameover = scene.new("platlevel")
+entities:reset(gameover)
+
+local spacebar = entities.find("spacebar")
+
+local restartLevel = ""
+function gameover:enter(lastLevel)
+	restartLevel = lastLevel
+	love.graphics.setBackgroundColor(0,0,0,1)
+
+	spacebar.usage += 2 -- prevents displaying
+
+	local inventory = entities.find("inventory")
+
+	inventory.parts = {}
+end
+
+local drawStatus = 0 -- update using delays/counters/etc.
+local spaceimg = spacebar.tierImg[spacebar.tier]
+
+local soundCrack = love.audio.newSource("asset/audio/gameover4.wav", "static")
+local soundPart = love.audio.newSource("asset/audio/gameover3.wav", "static")
+
+local brokenQuad = love.graphics.newQuad(0, 448, 512, 64, 512, 512)
+local leftQuad = love.graphics.newQuad(0, 448, 256, 64, 512, 512)
+local rightQuad = love.graphics.newQuad(256, 448, 256, 64, 512, 512)
+
+local particles = love.graphics.newParticleSystem(spaceimg, 1000)
+particles:setParticleLifetime(0.5, 1)
+particles:setEmissionRate(1000)
+particles:setEmissionArea("uniform", 128, 32)
+particles:setSizes(0.01, 0.01)
+particles:setLinearAcceleration(-200, -200, 200, 200)
+particles:setColors(1, 1, 1, 1, 1, 1, 1, 0)
+
+function gameover:draw()
+	if drawStatus == 0 then
+		love.graphics.setColor(1,1,1,1)
+		love.graphics.draw(spaceimg, brokenQuad, spacebar.x, spacebar.y)
+	elseif drawStatus == 1 then
+		love.graphics.draw(spaceimg, leftQuad, spacebar.x-16, spacebar.y, -0.1)
+		love.graphics.draw(spaceimg, rightQuad, spacebar.x+512+16, spacebar.y, 0.1, 1, 1, 256, 0)
+	elseif drawStatus == 3 then
+		-- print game over
+		-- start to continue
+		love.graphics.setColor(1,1,1,1)
+		love.graphics.setFont(font.LemonMilk[94])
+		love.graphics.print("GAME OVER", (1280-font.LemonMilk[94]:getWidth("GAME OVER"))/2, 273) -- TODO center
+		love.graphics.setColor(0.5, 0.5, 0.5, 1)
+		love.graphics.setFont(font.LemonMilk[24])
+		love.graphics.print("Press enter to restart level", (1280-font.LemonMilk[24]:getWidth("Press space to restart level"))/2, 383)
+		love.graphics.print("Too hard? You can restart the game and collect more space bars in previous levels", (1280-font.LemonMilk[24]:getWidth("Too hard? You can restart the game and collect more space bars in previous levels"))/2, 600)
+	end
+
+	if drawStatus >= 2 then
+		--love.graphics.draw(particles, spacebar.x + 256, spacebar.y + 32)
+		love.graphics.draw(particles, spacebar.x-16+256-128, spacebar.y + 32-16, -0.1)
+		love.graphics.draw(particles, spacebar.x+512+16+256-128, spacebar.y + 32, 0.1, 1, 1, 256, 0)
+	end
+	-- TODO classy gameover screen
+end
+
+local timer = 0
+function gameover:update(dt)
+	timer += dt
+	if timer > 1000 and drawStatus < 3 then --TODO better timing
+		drawStatus += 1
+		if drawStatus == 1 then
+			soundCrack:play()
+		elseif drawStatus == 2 then
+			particles:start()
+			soundPart:play()
+		end
+		timer = 0
+	end
+
+	if drawStatus >= 2 then
+		particles:update(dt/1000)
+	end
+
+	if drawStatus == 3 then
+		particles:setEmissionRate(0)
+	end
+
+	if drawStatus == 3 and input.enter:pressed() then
+		entities.find("spacestack"):load()
+		entities.find("spacebar"):load()
+		entities.find("inventory"):load()
+
+		entities.freeze = true
+		local name = uqt.scene.current.name
+		local rect = require("entity.rectangle"):new(0, 0, 1280, 720, {
+			hud = true,
+			color = {1,1,1,0}
+		})
+		uqt.scene.current.time.tween(500, rect.color, {[4]=1})
+		:onEnd(function()
+			rect.remove = true
+			entities.freeze = false
+			spacebar.usage = 0
+			uqt.scene.switch(restartLevel)
+		end)
+	end
+end
+
+return gameover

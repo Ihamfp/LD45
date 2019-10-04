@@ -1,0 +1,16 @@
+local uqt = require("ubiquitousse")
+local scene = uqt.scene
+
+local entities = require("entities")
+
+local Map = require("entity.map")
+local Hyke = require("entity.hyke")
+
+local start = scene.new("splash")
+entities.reset(start)
+
+local map = Map:new("asset/map/forest.lua")
+
+local hyke = Hyke:new(100, 100)
+
+return start

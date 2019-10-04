@@ -1,0 +1,18 @@
+Ubiquitousse, also known as "The World's Best Video Game Engine Of All Time", despite its perfectness, is still not perfect.
+More specifically, what is lacking to officially turn Ubiquitousse into a sacred text, is:
+- An i18n API. While some languages are clearly superior to others, the general consensus seems to think otherwise. Ubiquitousse
+  should be able to get an ordered list of prefered languages and provide translation helpers. See The Pong.
+- Asset management. See The Pong.
+- Some API are still lacking an API and/or implementation. Search "TODO" for more information.
+- A filesystem API, to access the game's filesystem. May also rewrite Lua's io functions, see the next item.
+- A sandboxing system. Ubiquitousse should be able to run in a Ubiquitousse game safely. Since Ubiquitousse can run itself, it will
+  then seems reasonable to claim Ubiquitousse run the universe. See World Domination for Dummies.
+- A libretro backend, so Ubiquitousse really become ubiquitous. If you didn't know, it's the goal.
+- Maybe some compatibilty layer for different Lua versions.
+- Some network access. Ubiquitousse needs to spread.
+- Weird APIs to allow the backend to manipulate more efficiently the game:
+  - Memory / environment access.
+  - State saving / Time travel API. Real world Time Travel is optional but preferable.
+- Test suite. Ubiquitousse should run perfectly. Including pixel-perfect image output. "Namého".
+- At least a million followers and their souls.
+- Sacrifices. A lot of them.

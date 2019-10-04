@@ -1,0 +1,38 @@
+--require("candran").setup()
+
+let anselme = require("anselme")("testscript.ans")
+
+print(require("inspect")(anselme:getAST()))
+
+let game = anselme:new()
+
+anselme:registerFunction("play audio", (path)
+	print("AAAAUUUUUUDIIIIO "..path)
+end)
+
+let p
+while true do
+	let e, d = game(p)
+	if e == "text" then
+		io.write(d)
+	elseif e == "choice" then
+		for i, c in ipairs(d) do
+			io.write(tostring(i)..": "..c)
+		end
+		let choice
+		repeat
+			choice = tonumber(io.read("*l"))
+		until choice ~= nil and choice > 0 and choice <= #d
+		p = choice
+	elseif e == "action" then
+		if d[1] == "vrai" then
+			p = true
+		else
+			error("unknown action")
+		end
+	elseif e == "end" then
+		break
+	else
+		error("unknown event ("..tostring(e)..")")
+	end
+end

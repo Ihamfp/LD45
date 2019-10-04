@@ -1,0 +1,67 @@
+THE PONG
+Le jeu du siècle
+
+§ point
+	:0 pas de questions
+	:0 réflexion
+	:0 j'ai pas compris
+	:0 sachons vivre
+
+§ inventory
+	:0 pierre de lumière
+	:0 nains de jardin
+	:0 paquet de chips
+
+:2 point pas de question
+:no accès au club de chips
+:"Charles Édouard" nom du héros
+:(point pas de question * 2) deux fois moins de questions
+
+(Le début de l'aventure)
+§ start
+	§ salut
+	Salut, tu veux des chips ?
+	> Ah ouais tiens.
+		Par contre c'est plus de l'émietté que du beau morceau. Mais bon, les temps sont durs, je pense que vous comprenez.
+		> C'est vrai que depuis que la grande source s'est tarie... enfin bon, on ne peux plus rien n'y faire. Profitons des quelques chips dont l'ont peut.
+			()# audio.chips
+			+1 inventory.paquet de chips
+			+1 point.sachons vivre
+			D'ailleurs, j'ai ouïe dire d'un certain club privé pour les amateurs de bonne nourriture comme nous. Tenez, voici l’adresse.
+			> Wouhah, classe. J'y vais de ce pas, ferme mais décidé. $ !used
+				+1 point.pas de questions
+				="James" club de chips.référent
+				~ club de chips
+			> Merci. Je considérerai intensément la question dans un temps futur.
+				+1 point.réflexion
+			> Je connais déjà. ~ point.j'ai pas compris > 1
+		> Ah ouais mais non mon gars, ça va pas le faire. Ça va pas le faire du tout.
+			-1 point.sachons vivre
+	> Non, surtout pas, malheureux !
+		Heu... quoi ? Attends, on va recommencer.
+		+1 point.j'ai pas compris
+		~ start
+~ start
+
+(Le fameux club)
+§ club de chips
+	:"Aucun" référent
+	:"il fait beau" message
+	~ point.j'ai pas compris > 1
+		Bien le bienvenue du bonjour dans notre aimable et appréciable du moins nous l'espérons companie et un accueil chalereux et une utilisation optimalement plaisante de nos formidales locaux à vous. Ah et aussi, {message}.
+		=yes accès au club de chips
+		# fin
+	~~
+		Non.
+
+§ test choix
+	Salut, c'est la {test choix.seen}ième fois que tu me raconte cette merde. \
+	~ seen = 1
+		Hein ?
+	~~ 2
+		Ah.
+	~~ 3
+		Ouais ouais.
+	~~
+		J'en ai marre.
+	Ce texte n'est visible qu'une fois. * !seen
