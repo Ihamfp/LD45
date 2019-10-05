@@ -15,51 +15,10 @@ local Sprite = require("entity.sprite")
 local Pointer = require("entity.pointer")
 local uqt = require("ubiquitousse")
 local Shockwave = require("entity.shockwave")
-local Butter = require("entity.butter")
-local ButterTray = require("entity.buttertray")
 local Jumpable = require("entity.jumpable")
 
 local idleImg = love.graphics.newImage("asset/sprite/hyke.png")
 local shadow = love.graphics.newImage("asset/sprite/shadowthehedghog.png")
-local butterImg = love.graphics.newImage("asset/sprite/butter.png")
--- local walkImg = love.graphics.newImage("asset/sprite/hykewalk.png")
--- local jumpImg = love.graphics.newImage("asset/sprite/hykejump.png")
--- local fallImg = love.graphics.newImage("asset/sprite/hykefall.png")
--- local ladderImg = love.graphics.newImage("asset/sprite/hykeladder.png")
--- local jump = love.audio.newSource("asset/audio/jump.wav", "static")
--- local ouch = love.audio.newSource("asset/audio/ouch.wav", "static")
-
-local jumpA = {
-	love.audio.newSource("asset/audio/saut1.ogg", "static"),
-	love.audio.newSource("asset/audio/saut2.ogg", "static"),
-	love.audio.newSource("asset/audio/saut3.ogg", "static"),
-	love.audio.newSource("asset/audio/saut4.ogg", "static"),
-	love.audio.newSource("asset/audio/saut5.ogg", "static"),
-	love.audio.newSource("asset/audio/saut6.ogg", "static"),
-	love.audio.newSource("asset/audio/saut7.ogg", "static")
-}
-
-local touchdownA = {
-	love.audio.newSource("asset/audio/touchdown1.ogg", "static"),
-	love.audio.newSource("asset/audio/touchdown2.ogg", "static"),
-	love.audio.newSource("asset/audio/touchdown3.ogg", "static"),
-	love.audio.newSource("asset/audio/touchdown4.ogg", "static")
-}
-
-local grazeA = {
-	love.audio.newSource("asset/audio/graze1.ogg", "static"),
-	love.audio.newSource("asset/audio/graze2.ogg", "static")
-}
-
-local ouchp = {
-	love.audio.newSource("asset/audio/ouchp1.ogg", "static"),
-	love.audio.newSource("asset/audio/ouchp2.ogg", "static"),
-	love.audio.newSource("asset/audio/ouchp3.ogg", "static")
-}
-
-local breakBar = love.audio.newSource("asset/audio/breakbrokebroken.ogg", "static")
-local press = love.audio.newSource("asset/audio/modelm2.wav", "static")
-local butter = love.audio.newSource("asset/audio/butter.ogg", "static")
 
 local cursor
 local tornadoPlat
@@ -68,38 +27,7 @@ local direction = "up"
 local currentlyCollidingButter
 local idleg
 
-local hykeAttack = SolidSprite {
-	dx = -8, dy = -8,
-	width = 32, height = 32,
-	noCollision = true
-}
-
 local blackish, cinema, cinemaEvent
-
-local minusOneHealth = function(sfx)
-	local spacebar = entities.find("spacebar")
-	sfx:play()
-	spacebar:use()
-	if spacebar:isBroken() then
-		breakBar:play()
-		local spacestack = entities.find("spacestack")
-		local nextSpace = spacestack:getNext()
-		if nextSpace == nil then
-			entities.shake = 100
-			local name = uqt.scene.current.name
-			if name == "boss" then name = "totheboss" end
-			ouchp[math.random(1, #ouchp)]:play()
-			uqt.scene.current.time.run(function()
-				uqt.scene.switch("gameover", name)
-			end):after(50)
-		else
-			spacebar.usage = 0
-			spacebar:randomize()
-			spacebar.tier = nextSpace
-		end
-	end
-end
-
 
 return SolidSprite {
 	__name = "hyke",
@@ -115,16 +43,10 @@ return SolidSprite {
 	speed = 0,
 	minspeed = 5,
 
-	buttering = nil,
-
 	vx = 0,
 	vy = 0,
 
-	jumping = false,
-
-	hykeAttack = nil,
 	direction = "up",
-	currentlyCollidingButter = nil,
 
 	cloneSymetry = nil, -- 1, 2, 3 (clockwise)
 
@@ -477,9 +399,6 @@ return SolidSprite {
 					-- end
 				end
 			end
-			if not collidingWithSameButter then
-				self.currentlyCollidingButter = nil
-			end
 
 			for _, c in ipairs(self.hykeAttack.collisions) do
 				local o = c.other
@@ -496,26 +415,6 @@ return SolidSprite {
 						end
 					end
 				end
-			end
-
-			-- if not tornadoPlatted and tornadoPlat then
-			-- 	if tornadoPlat.remove ~= true then tornadoPlat:remove() tornadoPlat = nil end
-			-- end
-			-- if not stonehedgePlatted and stonehedgePlat then
-			-- 	if stonehedgePlat.remove ~= true then stonehedgePlat:remove() stonehedgePlat = nil end
-			-- end
-			-- if not cursored and cursor then
-			-- 	if cursor.remove ~= true then cursor:remove() cursor = nil end
-			-- end
-
-			-- for _, e in ipairs(entities.list) do
-			-- 	if e ~= self and Solid.is(e) and e:collide(self) then
-			-- 		self.x, self.y = oX, oY
-			-- 	end
-			-- end
-
-			if self.currentAnimation == "up" or self.currentAnimation == "down" or self.currentAnimation == "left" or self.currentAnimation == "right" then
-				self.buttering:set(self.currentAnimation)
 			end
 
 			if self.cloneSymetry == 1 then

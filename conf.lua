@@ -1,8 +1,8 @@
 function love.conf(t)
-	t.identity = "S. O. Nic Adventure"             -- The name of the save directory (string)
+	t.identity = "Greenpotato"             -- The name of the save directory (string)
 	t.version = "11.1"                -- The LÖVE version this game was made for (string)
 
-	t.window.title = "S. O. Nic Adventure"         -- The window title (string)
+	t.window.title = "Groenpotato"      -- The window title (string)
 	t.window.icon = nil                 -- Filepath to an image to use as the window's icon (string)
 	t.window.width = 1280               -- The window width (number)
 	t.window.height = 720               -- The window height (number)
@@ -25,15 +25,15 @@ function love.conf(t)
 	t.modules.thread = false            -- Enable the thread module (boolean)
 
 	t.releases = {
-		title = "S. O. Nic Adventure",       -- The project title (string)
-		package = "sonicadventure-ld42",     -- The project command and package name (string)
-		loveVersion = "11.1",   -- The project LÖVE version
+		title = "Groenpotato",       -- The project title (string)
+		package = "groenpotato-ld45",     -- The project command and package name (string)
+		loveVersion = "11.2",   -- The project LÖVE version
 		version = "0.1.0",        -- The project version
 		author = "Reuh, Ihamfp, Trocentraisin, CelesteGranger",          -- Your name (string)
 		email = "fildadut@reuh.eu",-- Your email (string)
-		description = "Świętosław Ožbej Nic Adventure",-- The project description (string)
+		description = "Potatoes in Groenland. Like Greenland, but frenchier",-- The project description (string)
 		homepage = "reuh.eu",     -- The project homepage (string)
-		identifier = "eu.reuh.ld42",         -- The project Uniform Type Identifier (string)
+		identifier = "eu.reuh.ld45",         -- The project Uniform Type Identifier (string)
 		excludeFileList = { "%.git", "dev" },-- File patterns to exclude. (string list)
 		releaseDirectory = "release", -- Where to store the project releases (string)
 	}

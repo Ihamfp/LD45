@@ -1,5 +1,5 @@
---- LD42
--- This is the story of Świętosław Ožbej Nic, or S.O. Nic for short.
+--- LD45
+-- This is the story of potatoes in Greenland.
 
 math.randomseed(os.time())
 
@@ -73,4 +73,4 @@ end
 
 -- Start
 --uqt.scene.switch("splash")
-uqt.scene.switch("game")
+uqt.scene.switch("mainmap")
