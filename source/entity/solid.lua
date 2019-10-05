@@ -63,6 +63,12 @@ return Entity {
 		if map then -- ENGAGE TILED MODE
 			self.world = map.world
 			self.world:add(self, self.x, self.y, self.width, self.height)
+		else -- ENGAGE IMAGE BG MODE
+			local scrollworld = entities.find("scrollworld")
+			if scrollworld then
+				self.world = scrollworld.world
+				self.world:add(self, self.x, self.y, self.width, self.height)
+			end
 		end
 	end,
 

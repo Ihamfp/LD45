@@ -53,8 +53,6 @@ return SolidSprite {
 	new = function(self, x, y, options)
 		SolidSprite.new(self, x, y, options)
 
-		self.hykeAttack = hykeAttack:new(x+hykeAttack.dx, y+hykeAttack.dy)
-
 		-- idle
 		idleg = anim8.newGrid(64, 64, idleImg:getWidth(), idleImg:getHeight())
 
@@ -123,175 +121,46 @@ return SolidSprite {
 			if score then
 				score.time = score.time + dt
 			end
-
-			self.hykeAttack.x, self.hykeAttack.y = self.x+hykeAttack.dx, self.y+hykeAttack.dy
-			self.world:update(self.hykeAttack, self.hykeAttack.x, self.hykeAttack.y, self.hykeAttack.width, self.hykeAttack.height)
-
-			self.speed = math.max(self.speed, self.minspeed)
-
-			if not self.buttering then
-				self.buttering = Butter:new(self.x, self.y)
-			end
-
+			
 			-- animation & move
-			if self.directionPressed > 0 then
-				self.directionPressed = self.directionPressed - 1
+			local maxspeed = 70
+			if move.right:down() then
+				self.direction = "right"
+				self:set("right")
+				self.vx = math.min(self.vx + 2, maxspeed)
+			elseif move.left:down() then
+				self.direction = "left"
+				self:set("left")
+				self.vx = math.max(self.vx - 2, -maxspeed)
 			else
-				if (
-					(not self.cloneSymetry and move.right:pressed()) or
-					(self.cloneSymetry == 1 and move.left:pressed())
-				   ) and self.direction ~= "right" then
-					if self.direction == "up" then
-						self.buttering.height = math.max(1, self.buttering.height - 16)
-						self.buttering.y = self.buttering.y + 16
-						self.buttering:updateSize()
-					end
-					self.direction = "right"
-					self.buttering = Butter:new(self.x, self.y)
-					self:set("right")
-					self.directionPressed = 4
-				elseif (
-					(not self.cloneSymetry and move.left:pressed()) or
-					(self.cloneSymetry == 1 and move.right:pressed())
-				) and self.direction ~= "left" then
-					if self.direction == "up" then
-						self.buttering.y = self.buttering.y + 16
-						self.buttering.height = math.max(1, self.buttering.height - 16)
-						self.buttering:updateSize()
-					end
-					self.direction = "left"
-					self.buttering = Butter:new(self.x, self.y)
-					self:set("left")
-					self.directionPressed = 4
-				elseif move.up:pressed() and self.direction ~= "up" then
-					if self.direction == "left" then
-						self.buttering.width = math.max(1, self.buttering.width - 16)
-						self.buttering.x = self.buttering.x + 16
-						self.buttering:updateSize()
-					end
-					self.direction = "up"
-					self.buttering = Butter:new(self.x, self.y)
-					self:set("up")
-					self.directionPressed = 4
-				elseif move.down:pressed() and self.direction ~= "down" then
-					if self.direction == "left" then
-						self.buttering.width = math.max(1, self.buttering.width - 16)
-						self.buttering.x = self.buttering.x + 16
-						self.buttering:updateSize()
-					end
-					self.direction = "down"
-					self.buttering = Butter:new(self.x, self.y)
-					self:set("down")
-					self.directionPressed = 4
-				end
+				self.vx = 0
 			end
-
-			if space:pressed() and not self.jumping then
-				minusOneHealth(press)
-
-				local oY, oX = self.oy, self.ox
-				uqt.scene.current.time.tween(200, self, {
-					sx = 1.5,
-					sy = 1.5,
-					ox = oX - (self.width - self.width*1.5)/2,
-					oy = oY + 30
-				}, "outCubic")
-				:stopWhen(space.released)
-				:onEnd(function(r, duration)
-					uqt.scene.current.time.tween(math.max(100, duration), self, {
-						sx = 1,
-						sy = 1,
-						ox = oX,
-						oy = oY
-					}, "inQuad")
-					:onEnd(function()
-						self.buttering = Butter:new(self.x, self.y)
-						self.jumping = false
-						touchdownA[math.random(1, #touchdownA)]:play()
-					end)
-				end)
-				local dx, dy = 0, 0
-				if self.direction == "up" then
-					dy = -16
-				elseif self.direction == "left" then
-					dx = -16
-				end
-				self.buttering = ButterTray:new(self.x + dx, self.y + dy)
-				self.jumping = true
-				self.animSpeedUp = self.animSpeedUp*3
-				jumpA[math.random(1, #jumpA)]:play()
-			end
-
-			-- accel
-			self.speed = math.min(self.speed + self.accel*dt, self.maxspeed)
-
-			if score then
-				score.maxSpeed = math.max(self.speed, score.maxSpeed)
-				if self.speed == self.maxspeed then
-					score.maxSpeedDuration = score.maxSpeedDuration + dt
-				end
+			if move.up:down() then
+				self.direction = "up"
+				self:set("up")
+				self.vy = math.max(self.vy - 2, -maxspeed)
+			elseif move.down:down() then
+				self.direction = "down"
+				self:set("down")
+				self.vy = math.min(self.vy + 2, maxspeed)
+			else
+				self.vy = 0
 			end
 
 			-- move
-			if self.direction == "up" then
-				self.vx, self.vy = 0, -self.speed
-			elseif self.direction == "down" then
-				self.vx, self.vy = 0, self.speed
-			elseif self.direction == "right" then
-				self.vx, self.vy = self.speed, 0
-			elseif self.direction == "left" then
-				self.vx, self.vy = -self.speed, 0
-			end
 			self:move(self.vx * dt, self.vy * dt)
-			self.hykeAttack:move(self.vx * dt, self.vy * dt)
 
-			-- butter
-			if self.direction == "up" then
-				local oY = self.buttering.y
-				self.buttering.y = self.y
-				self.buttering.height = (oY + self.buttering.height) - self.y
-			elseif self.direction == "down" then
-				self.buttering.height = self.y - self.buttering.y
-			elseif self.direction == "right" then
-				self.buttering.width = self.x - self.buttering.x
-			elseif self.direction == "left" then
-				local oX = self.buttering.x
-				self.buttering.x = self.x
-				self.buttering.width = (oX + self.buttering.width) - self.x
-			end
-			self.buttering.width, self.buttering.height = math.max(1, self.buttering.width), math.max(1, self.buttering.height)
-			self.buttering:updateSize()
-
-			if not self.jumping then
+			--[[if not self.jumping then
 				self.animSpeedUp = math.log(self.speed / 8)
-			end
-
-			if self.vx == 0 and self.vy == 0 then
-				if self.speed > 50 then
-					entities.shake = self.speed/10
-					uqt.scene.current.time.run(function()
-						entities.shake = 0
-					end):after(100)
-				end
-				self.speed = 0
-			end
+			end]]
 
 			-- local cursored = false
 			-- local tornadoPlatted = false
 			-- local stonehedgePlatted = false
 
 			-- collide
-			local collidingWithSameButter = false
 			for _, c in ipairs(self.collisions) do
 				local o = c.other
-				if not self.jumping and o.__name == "butter" and o ~= self.buttering and not o.ignoreButter then
-					if o~= self.currentlyCollidingButter then
-						self.speed = self.speed * 0.1
-						butter:play()
-					end
-					self.currentlyCollidingButter = o
-					collidingWithSameButter = true
-				end
 				if o.__name == "warp" then
 					entities.freeze = true
 					local name = uqt.scene.current.name
@@ -397,23 +266,6 @@ return SolidSprite {
 					-- 		stonehedgePlat.x, stonehedgePlat.y = self.x, self.y -64
 					-- 	end
 					-- end
-				end
-			end
-
-			for _, c in ipairs(self.hykeAttack.collisions) do
-				local o = c.other
-				if o.jumpover and not o.invincible then
-					if self.jumping then
-						o:jumpover()
-					elseif o.noCollision then
-						o:jumpover()
-					else
-						if score and not o.grazed then
-							o.grazed = true
-							score.thingsGrazed = score.thingsGrazed + 1
-							grazeA[math.random(1, #grazeA)]:play()
-						end
-					end
 				end
 			end
 

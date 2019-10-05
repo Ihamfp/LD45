@@ -6,7 +6,9 @@ local shine = require("shine")
 
 --local Map = require("entity.map")
 local BgParalax = require("entity.bgparalax")
-local ScrollBG = require("entity.scrollbackground")
+local ScrollBG = require("entity.scrollworld")
+
+local Hyke = require("entity.hyke")
 
 local start = scene.new("main")
 entities.reset(start)
@@ -29,13 +31,15 @@ function start:enter()
 	end
 	function start:resume()
 		entities.set(start)
-		print("resumed")
 		--start.zik:play()
 	end
 	
 	local bgmap = ScrollBG:new("mapbg.png")
 	bgmap.x = -320
 	bgmap.y = -180
+	
+	local hyke = Hyke:new(640, 360)
+	
 	bgmap.visible = true
 end
 

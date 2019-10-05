@@ -17,13 +17,6 @@ start.effect = shine.vignette{
 
 function start:enter(power)
 	love.graphics.setBackgroundColor(0, 0, 0, 1)
-
-	-- local bg = BgParalax:new("bg"..power.unlockIn..".png")
-	--local map = Map:new("asset/map/SuperMarche2-2.lua")
-
-	-- local zik = love.audio.newSource("asset/audio/"..power.unlockZik, "stream")
-	-- zik:setLooping(true)
-	-- zik:play()
 	function start:exit()
 		-- zik:stop()
 	end
@@ -35,41 +28,14 @@ function start:enter(power)
 		-- zik:play()
 	end
 
-	-- local found = false
-	-- for _, object in pairs(map.map.objects) do
-    --     if object.name == power.unlockName or object.properties.name == power.unlockName then
-	-- 		found = true
-    --         Power:new(object.x, object.y, power.icon)
-    --         break
-	-- 	end
-    -- end
-	-- if not found then
-	-- 	print("WARNING: Can't find the power object in the map!")
-	-- end
-
-	-- for i, layer in pairs(map.map.layers) do
-	-- 	if layer.name == "remove if "..power.unlockName then
-	-- 		map.map:bump_removeLayer(i, map.world)
-	-- 		map.map:removeLayer(i)
-	-- 	end
-	-- end
-
-	local spacebar = require("entity.hud.spacebar"):new()
-	local spacestack = require("entity.hud.spacestack"):new()
-	local inventory = require("entity.hud.inventory"):new()
-
-	entities.find("spacestack"):save()
-	entities.find("spacebar"):save()
-	entities.find("inventory"):save()
-
 	--scene.switch("totheboss")
 
-	local t = require("entity.text"):new(font.LemonMilk[94], "Reuh, Ihampf, Trocentraisin and Céleste Granger\nare relatively proud to show you", 0, love.graphics.getHeight()/2, {
+	local t = require("entity.text"):new(font.LemonMilk[94], "Reuh, Ihampf, Trocentraisin and Céleste Granger\nare definitely proud to present you", 0, love.graphics.getHeight()/2, {
 		alignX = "center", alignY = "center",
 		limit = love.graphics.getWidth(),
 		color = {1,1,1,1}
 	})
-	local t2 = require("entity.text"):new(font.LemonMilk[94], "Swietoslaw Ozbej Nic Adventure", 0, love.graphics.getHeight()/2, {
+	local t2 = require("entity.text"):new(font.LemonMilk[94], "GroenPotato", 0, love.graphics.getHeight()/2, {
 		alignX = "center", alignY = "center",
 		limit = love.graphics.getWidth(),
 		color = {1,1,1,0}
