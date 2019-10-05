@@ -47,8 +47,10 @@ return SolidSprite {
 	vy = 0,
 
 	direction = "up",
-
-	cloneSymetry = nil, -- 1, 2, 3 (clockwise)
+	
+	health = 100,
+	food = 100,
+	notCold = 100,
 
 	new = function(self, x, y, options)
 		SolidSprite.new(self, x, y, options)
@@ -69,15 +71,6 @@ return SolidSprite {
 		self:set("up")
 
 		self.lastCheckpoint = {self.x, self.y}
-
-		if self.cloneSymetry then
-			self.__name = "hyke"..tostring(self.cloneSymetry)
-			local hyke = entities.find("hyke")
-			if self.cloneSymetry == 1 then
-				self.color = { .5, 1, .5, .7}
-				self.x, self.y = love.graphics.getWidth()-hyke.x, hyke.y
-			end
-		end
 
 		blackish = require("entity.rectangle"):new(0, 0, 1280, 720, {
 			hud = true,
@@ -154,10 +147,6 @@ return SolidSprite {
 				self.animSpeedUp = math.log(self.speed / 8)
 			end]]
 
-			-- local cursored = false
-			-- local tornadoPlatted = false
-			-- local stonehedgePlatted = false
-
 			-- collide
 			for _, c in ipairs(self.collisions) do
 				local o = c.other
@@ -199,7 +188,6 @@ return SolidSprite {
 				if o.damage and o.damage > 0 and (not o.lastCollision or ((uqt.scene.current.time:get() - o.lastCollision) > 1000)) and not o.ignoreDamage and not self.jumping then
 					o.lastCollision = uqt.scene.current.time:get()
 					for i=1, o.damage do
-						minusOneHealth(ouchp[math.random(1, #ouchp)])
 						-- TODO particles
 						local particles = love.graphics.newParticleSystem(butterImg)
 						particles:setParticleLifetime(0.5, 0.8)
@@ -222,56 +210,7 @@ return SolidSprite {
 					if o.properties.checkpoint then
 						self.lastCheckpoint = {self.x, self.y}
 					end
-					-- if o.properties.death then
-					-- 	ouch:play()
-					-- 	self.x, self.y = self.lastCheckpoint[1], self.lastCheckpoint[2]
-					-- 	self.world:update(self, self.x, self.y)
-					-- end
-					-- if o.properties.power then
-					-- 	cursored = true
-					-- 	if not cursor then
-					-- 		cursor = Pointer:new()
-					-- 	end
-					-- 	if o.properties.power == "tornado" and powerIcons[8].doingThePlatform then
-					-- 		tornadoPlatted = true
-					-- 		if not tornadoPlat then
-					-- 			tornadoPlat = PowerPlat:new(0,0,"powerico4.png", {
-					-- 				onPower = function()
-					-- 					Shockwave:new(self.x+16, self.y -64+16, powerIcons.data[4].shockwave)
-					-- 					if self.map.layers[o.properties.removeOnPower] then
-					-- 						self.map:bump_removeLayer(o.properties.removeOnPower, self.world)
-					-- 						self.map:removeLayer(o.properties.removeOnPower)
-					-- 					end
-					-- 				end
-					-- 			})
-					-- 		end
-					-- 		tornadoPlat.x, tornadoPlat.y = self.x, self.y -64
-					-- 	end
-					-- 	if o.properties.power == "flyingStonehenge" and powerIcons[11].doingThePlatform then
-					-- 		stonehedgePlatted = true
-					-- 		if not stonehedgePlat then
-					-- 			stonehedgePlat = PowerPlat:new(0,0,"powerico9.png", {
-					-- 				onPower = function()
-					-- 					Shockwave:new(self.x+16, self.y -64+16, powerIcons.data[9].shockwave)
-					-- 					self.map.layers["ElevatorUp"].visible = not self.map.layers["ElevatorUp"].visible
-					-- 					if self.map.layers["ElevatorUp"].visible then
-					-- 						self.x, self.y = 415*16, 118*16
-					-- 					else
-					-- 						self.x, self.y = 429*16, 240*16
-					-- 					end
-					-- 					self.world:update(self, self.x, self.y)
-					-- 				end
-					-- 			})
-					-- 		end
-					-- 		stonehedgePlat.x, stonehedgePlat.y = self.x, self.y -64
-					-- 	end
-					-- end
 				end
-			end
-
-			if self.cloneSymetry == 1 then
-				local hyke = entities.find("hyke")
-				self.x, self.y = love.graphics.getWidth()-hyke.x, hyke.y
 			end
 		else
 			Sprite.update(self, dt)

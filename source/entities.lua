@@ -94,7 +94,7 @@ entities = {
 		t=t+dt
 
 		local hyke = entities.find("hyke")
-		local map = entities.find("map")
+		local scrollworld = entities.find("scrollworld")
 
 		if not entities.forceD then
 
@@ -104,6 +104,9 @@ entities = {
 			if map then
 				w = map.map.width * 32
 				h = map.map.height * 32
+			elseif scrollworld then
+				w = scrollworld.width
+				h = scrollworld.height
 			elseif hyke then
 				w = hyke.w
 				h = hyke.h

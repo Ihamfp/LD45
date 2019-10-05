@@ -9,6 +9,7 @@ local BgParalax = require("entity.bgparalax")
 local ScrollBG = require("entity.scrollworld")
 
 local Hyke = require("entity.hyke")
+local bars = require("entity.hud.bars")
 
 local start = scene.new("main")
 entities.reset(start)
@@ -35,10 +36,11 @@ function start:enter()
 	end
 	
 	local bgmap = ScrollBG:new("mapbg.png")
-	bgmap.x = -320
-	bgmap.y = -180
+	--bgmap.x = -320
+	--bgmap.y = -180
 	
 	local hyke = Hyke:new(640, 360)
+	local bars = bars:new()
 	
 	bgmap.visible = true
 end
