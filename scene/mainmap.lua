@@ -10,6 +10,7 @@ local ScrollBG = require("entity.scrollworld")
 
 local Hyke = require("entity.hyke")
 local bars = require("entity.hud.bars")
+local armor = require("entity.armor")
 
 local start = scene.new("main")
 entities.reset(start)
@@ -41,6 +42,10 @@ function start:enter()
 	
 	local hyke = Hyke:new(640, 360)
 	local bars = bars:new()
+	
+	for i=1, 3 do
+		local armorPart = armor:new(math.random(0, 1920), math.random(0, 1080), i)
+	end
 	
 	bgmap.visible = true
 end

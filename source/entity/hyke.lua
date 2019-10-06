@@ -51,6 +51,7 @@ return SolidSprite {
 	health = 100,
 	food = 100,
 	notCold = 100,
+	coldArmor = {[1] = false, [2] = false, [3] = false},
 
 	new = function(self, x, y, options)
 		SolidSprite.new(self, x, y, options)
@@ -80,6 +81,25 @@ return SolidSprite {
 	end,
 
 	update = function(self, dt)
+		-- drain stats
+		self.food = math.max(self.food - 0.2*dt, 0)
+		local coldArmorLevel = 0
+		for i=1, #self.coldArmor do
+			if self.coldArmor[i] then
+				coldArmorLevel = coldArmorLevel + 1
+			end
+		end
+		self.notCold = math.max(self.notCold - (2.8 - coldArmorLevel)*0.1*dt, 0)
+		if self.food == 0 then
+			self.health = math.max(self.health - 0.5*dt, 0)
+		end
+		if self.notCold == 0 then
+			self.health = math.max(self.health - 1*dt, 0)
+		end
+		if self.health == 0 then
+			-- die
+		end
+		-- ask Reuh
 		if cinema then
 			if cinemaEvent == nil then
 				local d
@@ -150,6 +170,7 @@ return SolidSprite {
 			-- collide
 			for _, c in ipairs(self.collisions) do
 				local o = c.other
+				
 				if o.__name == "warp" then
 					entities.freeze = true
 					local name = uqt.scene.current.name
@@ -184,6 +205,11 @@ return SolidSprite {
 						_G[var] = val
 					end)
 					cinema = ans:new()
+				end
+				if o.__name == "armor" and not self.coldArmor[o.armorPart] then
+					print("Picked up some  armor")
+					self.coldArmor[o.armorPart] = true
+					o.remove = true
 				end
 				if o.damage and o.damage > 0 and (not o.lastCollision or ((uqt.scene.current.time:get() - o.lastCollision) > 1000)) and not o.ignoreDamage and not self.jumping then
 					o.lastCollision = uqt.scene.current.time:get()
@@ -220,5 +246,6 @@ return SolidSprite {
 	draw = function(self, ...)
 		love.graphics.draw(shadow, math.floor(self.x), math.floor(self.y), self.r, 1, 1, 8, 8, self.kx, self.ky)
 		SolidSprite.draw(self, ...)
+		-- TODO draw the cold Armor
 	end
 }
