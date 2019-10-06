@@ -26,7 +26,7 @@ do
 			love.window.showMessageBox("Warning", txt, "warning")
 		end
 	end
-	checkCompat("Löve", "11.1.0", ("%s.%s.%s"):format(love.getVersion()))
+	--checkCompat("Löve", "11.2.0", ("%s.%s.%s"):format(love.getVersion()))
 	checkCompat("Ubiquitousse", "0.0.1", uqt.version)
 end
 
