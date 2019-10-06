@@ -92,6 +92,8 @@ return SolidSprite {
 		self.notCold = math.max(self.notCold - (2.8 - coldArmorLevel)*0.1*dt, 0)
 		if self.food == 0 then
 			self.health = math.max(self.health - 0.5*dt, 0)
+		else
+			self.health = math.min(self.health + 0.5*dt*(self.food/100), 100)
 		end
 		if self.notCold == 0 then
 			self.health = math.max(self.health - 1*dt, 0)

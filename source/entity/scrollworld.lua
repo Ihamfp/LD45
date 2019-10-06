@@ -4,6 +4,7 @@ local entities = require("entities")
 
 return Entity {
 	__name = "scrollworld",
+	noCollisions = true,
 
 	new = function(self, image, options)
 		Entity.new(self, options)
@@ -12,9 +13,9 @@ return Entity {
 		self.image = love.graphics.newImage("asset/sprite/"..image)
 		self.x = 0
 		self.y = 0
-		self.width = self.image:getPixelWidth()-320
-		self.height = self.image:getPixelHeight()-180
-		self.world = bump.newWorld()
+		self.width = self.image:getPixelWidth()
+		self.height = self.image:getPixelHeight()
+		self.world = bump.newWorld(64)
 	end,
 	
 	update = function(self, dt)

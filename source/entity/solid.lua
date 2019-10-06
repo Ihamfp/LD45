@@ -10,7 +10,7 @@ return Entity {
 	x = 0, y = 0,
 	width = 0, height = 0,
 
-	filter = function(item, other)
+	--[[filter = function(item, other)
 		event.update = entities.update
 		local ret = "slide"
 		if other.noCollision or item.noCollision then
@@ -54,7 +54,7 @@ return Entity {
 			end
 		end
 		return ret
-	end,
+	end,]]
 
 	new = function(self, options)
 		Entity.new(self, options)
@@ -66,6 +66,7 @@ return Entity {
 		else -- ENGAGE IMAGE BG MODE
 			local scrollworld = entities.find("scrollworld")
 			if scrollworld then
+				print("adding "..self.__name.." to the world")
 				self.world = scrollworld.world
 				self.world:add(self, self.x, self.y, self.width, self.height)
 			end

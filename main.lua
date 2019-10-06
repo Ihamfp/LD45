@@ -48,6 +48,9 @@ font = {
 	PerfectDOS = {
 		[54] = love.graphics.newFont("asset/font/PerfectDOS.ttf", 54),
 		[120] = love.graphics.newFont("asset/font/PerfectDOS.ttf", 120),
+	},
+	Potato = {
+		[54] = love.graphics.newFont("asset/font/Groenlandumtuberosum-Regular.ttf", 54)
 	}
 }
 

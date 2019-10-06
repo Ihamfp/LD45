@@ -12,6 +12,8 @@ local Hyke = require("entity.hyke")
 local bars = require("entity.hud.bars")
 local armor = require("entity.armor")
 
+local dialog = require("entity.hud.dialog")
+
 local start = scene.new("main")
 entities.reset(start)
 start.effect = shine.vignette{
@@ -46,6 +48,8 @@ function start:enter()
 	for i=1, 3 do
 		local armorPart = armor:new(math.random(0, 1920), math.random(0, 1080), i)
 	end
+	
+	local testDialog = dialog:new({"BOOM"}, font.Potato[54])
 	
 	bgmap.visible = true
 end

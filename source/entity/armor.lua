@@ -11,8 +11,11 @@ local armorSprites = {
 
 return Solid {
 	__name = "armor",
-	noCollide = true,
+	nocollision = true,
 	behind = "hyke",
+	
+	width = 32,
+	height = 32,
 	
 	armorPart = 0, -- no armor available
 	
@@ -28,5 +31,13 @@ return Solid {
 	draw = function(self, dx, dy, ...)
 		if not armorSprites[self.armorPart] then return end
 		love.graphics.draw(armorSprites[self.armorPart], self.x+dx, self.y+dy)
+	end,
+	
+	update = function(self, dt)
+		if self.collisions then
+			for n,v in pairs(self.collisions) do
+				print(n,v)
+			end
+		end
 	end
 }
