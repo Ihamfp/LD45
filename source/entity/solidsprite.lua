@@ -12,8 +12,8 @@ return Solid(Sprite) {
 		Solid.new(self)
 	end,
 
-	draw = function(self)
-		Sprite.draw(self)
+	draw = function(self, dx, dy)
+		Sprite.draw(self, dx, dy)
 		--love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
 }

@@ -243,9 +243,9 @@ return SolidSprite {
 		end
 	end,
 
-	draw = function(self, ...)
-		love.graphics.draw(shadow, math.floor(self.x), math.floor(self.y), self.r, 1, 1, 8, 8, self.kx, self.ky)
-		SolidSprite.draw(self, ...)
+	draw = function(self, dx, dy, ...)
+		love.graphics.draw(shadow, math.floor(self.x)+dx, math.floor(self.y)+dy, self.r, 1, 1, 8, 8, self.kx, self.ky)
+		SolidSprite.draw(self, dx, dy, ...)
 		-- TODO draw the cold Armor
 	end
 }

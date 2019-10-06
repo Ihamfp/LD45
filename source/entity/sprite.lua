@@ -47,16 +47,16 @@ return Entity {
 		if self.animation[self.currentAnimation] then self.animation[self.currentAnimation]:update(dt * self.animSpeedUp) end
 	end,
 
-	draw = function(self)
+	draw = function(self, dx, dy)
 		if self.animation[self.currentAnimation] then
 			if self.effect then
 				self.effect(function()
 					love.graphics.setColor(self.color)
-					self.animation[self.currentAnimation]:draw(self.image[self.currentAnimation], math.floor(self.x), math.floor(self.y), self.r, self.sx, self.sy, self.ox, self.oy, self.kx, self.ky)
+					self.animation[self.currentAnimation]:draw(self.image[self.currentAnimation], math.floor(self.x)+dx, math.floor(self.y)+dy, self.r, self.sx, self.sy, self.ox, self.oy, self.kx, self.ky)
 				end)
 			else
 				love.graphics.setColor(self.color)
-				self.animation[self.currentAnimation]:draw(self.image[self.currentAnimation], math.floor(self.x), math.floor(self.y), self.r, self.sx, self.sy, self.ox, self.oy, self.kx, self.ky)
+				self.animation[self.currentAnimation]:draw(self.image[self.currentAnimation], math.floor(self.x)+dx, math.floor(self.y)+dy, self.r, self.sx, self.sy, self.ox, self.oy, self.kx, self.ky)
 			end
 		end
 	end

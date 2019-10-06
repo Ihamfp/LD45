@@ -133,9 +133,9 @@ entities = {
 	end,
 
 	draw = function()
-		love.graphics.push()
+		--love.graphics.push()
 
-		love.graphics.translate(entities.dxV, entities.dyV)
+		--love.graphics.translate(entities.dxV, entities.dyV)
 
 		if not entities.noSprites then
 			for _, v in ipairs(entities.list) do
@@ -153,7 +153,7 @@ entities = {
 			end
 		end
 
-		love.graphics.pop()
+		--love.graphics.pop()
 
 		if not entities.disableHud then
 			for _, v in ipairs(entities.hud) do
