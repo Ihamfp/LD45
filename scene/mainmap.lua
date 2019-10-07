@@ -35,6 +35,7 @@ function start:enter()
   local potoffire = Potoffire:new({"asset/audio/6_PotOfFire.ogg",
                      "asset/audio/5_SufferingPotato.ogg"},960,540)
   local talkingpotato = Talkingpotato:new({"asset/audio/4_PotatoDialogue.ogg"})
+  
   local tracks = {goodhealth,randomsource1,randomsource2,potoffire,talkingpotato}
 
 	--[[start.zik = love.audio.newSource("asset/audio/Face_the_Genie_of_the_Forgotten_Themes_-_slow.ogg", "static")

@@ -12,11 +12,12 @@ return Music {
   end,
   
   update = function(self)
-    local hyke = entities.find(hyke)
+    local hyke = entities.find("hyke")
+    if not hyke then return end
     
     self.isOn = false
     volume = 1- 0.00005*( math.pow(hyke.x - self.x,2) + math.pow(hyke.y - self.y,2))
-    for sName in self.sNames do
+    for _, sName in pairs(self.s) do
       sName:setVolume(volume)
     end
   end

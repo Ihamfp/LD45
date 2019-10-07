@@ -212,6 +212,7 @@ return SolidSprite {
 					print("Picked up some  armor")
 					self.coldArmor[o.armorPart] = true
 					o.remove = true
+					o.world:remove(o)
 				end
 				if o.damage and o.damage > 0 and (not o.lastCollision or ((uqt.scene.current.time:get() - o.lastCollision) > 1000)) and not o.ignoreDamage and not self.jumping then
 					o.lastCollision = uqt.scene.current.time:get()

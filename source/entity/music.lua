@@ -1,4 +1,4 @@
-local Entity = require("classtoi")
+local Entity = require("entity")
 
 return Entity {
   __name = "music",
@@ -20,6 +20,7 @@ return Entity {
       self.s[i]:setLooping(true)
       self.s[i]:setVolume(0)
     end
+    Entity.new(self)
   end,
   
   -- Start the music
@@ -49,7 +50,9 @@ return Entity {
     for i=1, #self.s do
       self.s[i]:stop()
     end
-  end
+  end,
   
-  -- update = function(dt) end
+  update = function(dt)
+  	print("I'M A BEEEE")
+  end
 }

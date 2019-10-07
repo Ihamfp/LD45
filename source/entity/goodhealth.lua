@@ -11,17 +11,18 @@ return Music {
   end,
   
   update = function(self)
-    local hyke = entities.find(hyke)
+    local hyke = entities.find("hyke")
+    if not hyke then return end
     
     if (hyke.food <= 5 or hyke.notCold <= 5 or hyke.health <= 20) 
     then
       if self.isOn 
       then 
-        stop(self) 
+        self:stop() 
       end
     elseif not self.isOn 
     then 
-      play(self)
+      self:play()
     end
   end
 }
