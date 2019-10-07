@@ -15,6 +15,8 @@ return Entity {
     self.y = y
     self.isOn = false
     self.s = {}
+    --self.volume = 0
+    --self.step = onVolume/100
     for i=1, #sources do
       self.s[i] = love.audio.newSource(sources[i],"stream")
       self.s[i]:setLooping(true)
@@ -36,6 +38,7 @@ return Entity {
     for i=1, #self.s do
       self.s[i]:setVolume(self.onVolume)
     end
+    print("playing ".. self.__name)
   end,
   
   -- Stop the sound
@@ -44,6 +47,7 @@ return Entity {
     for i=1, #self.s do
       self.s[i]:setVolume(0)
     end
+    print("stopping ".. self.__name)
   end,
   
   trueStop = function(self)

@@ -11,8 +11,8 @@ return Music {
   
   update = function(self)
     if math.random() > 0.9997 then 
-      if self.isOn then stop(self)
-      else play(self)
+      if self.isOn then self:stop()
+      else self:play()
       end
     end
   end

@@ -7,7 +7,7 @@ return Music {
   sources = {},
   x = 0, y = 0,
   
-  new = function(self,sources)
+  new = function(self,sources,x,y)
     Music.new(self,sources,1.0,x,y)
   end,
   
@@ -16,9 +16,9 @@ return Music {
     if not hyke then return end
     
     self.isOn = false
-    volume = 1- 0.00005*( math.pow(hyke.x - self.x,2) + math.pow(hyke.y - self.y,2))
-    for _, sName in pairs(self.s) do
-      sName:setVolume(volume)
+    volume = 1- 0.00001*( math.pow(hyke.x - self.x,2) + math.pow(hyke.y - self.y,2))
+    for i=1, #self.s do
+      self.s[i]:setVolume(volume)
     end
   end
 }

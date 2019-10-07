@@ -5,7 +5,7 @@ local entities = require("entities")
 local enter = require("input").enter
 
 return Sprite {
-	__name = "bars",
+	__name = "dialog",
 	hud = true,
 	
 	x = 160,

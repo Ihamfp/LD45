@@ -11,9 +11,12 @@ return Music {
 	
 	update = function(self)
 		local dialog = entities.find("dialog")
+		
 		if dialog and not self.isOn then
+		  print("potatoPlay")
 			self:play()
-		elseif not dialog and self.isOn then
+		elseif (not dialog) and self.isOn then
+			print("potatoStop")
 			self:stop()
 		end
 	end

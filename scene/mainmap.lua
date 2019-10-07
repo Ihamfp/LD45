@@ -48,7 +48,7 @@ function start:enter()
   end
 	
 	function start:exit()
-	  for i=1, tracks do
+	  for i=1, #tracks do
 	   tracks[i]:trueStop()
 	  end
 		 --start.zik:stop()
@@ -78,7 +78,7 @@ function start:enter()
 		local armorPart = armor:new(math.random(0, 1920), math.random(0, 1080), i)
 	end
 	
-	local testDialog = dialog:new({"BOOM"}, font.Potato[54])
+	local testDialog = dialog:new({"POT OF FIRE TASTY AND GOOD"}, font.Potato[54])
 	
 	bgmap.visible = true
 end
