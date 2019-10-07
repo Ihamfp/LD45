@@ -19,5 +19,7 @@ return Music {
 			print("potatoStop")
 			self:stop()
 		end
+		
+		self:updateVolume()
 	end
 }

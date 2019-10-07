@@ -24,5 +24,7 @@ return Music {
     then 
       self:play()
     end
+    
+    self:updateVolume()
   end
 }

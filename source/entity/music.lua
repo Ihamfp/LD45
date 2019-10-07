@@ -15,8 +15,12 @@ return Entity {
     self.y = y
     self.isOn = false
     self.s = {}
-    --self.volume = 0
-    --self.step = onVolume/100
+    
+    self.volume = 0
+    self.step = onVolume/45
+    self.isGoodVolume = true
+    self.isAugmenting = true
+    
     for i=1, #sources do
       self.s[i] = love.audio.newSource(sources[i],"stream")
       self.s[i]:setLooping(true)
@@ -35,24 +39,47 @@ return Entity {
   -- Activate the sound
   play = function(self)
     self.isOn = true
-    for i=1, #self.s do
-      self.s[i]:setVolume(self.onVolume)
-    end
+    self.isAugmenting = true
+    self.isGoodVolume = false
+    --for i=1, #self.s do
+    --  self.s[i]:setVolume(self.onVolume)
+    --end
     print("playing ".. self.__name)
   end,
   
   -- Stop the sound
   stop = function(self)
     self.isOn = false
-    for i=1, #self.s do
-      self.s[i]:setVolume(0)
-    end
+    self.isAugmenting = false
+    self.isGoodVolume = false
+    --for i=1, #self.s do
+    -- self.s[i]:setVolume(0)
+    --end
     print("stopping ".. self.__name)
   end,
   
   trueStop = function(self)
     for i=1, #self.s do
       self.s[i]:stop()
+    end
+  end,
+ 
+  -- Fade in / Fade out
+  updateVolume = function(self)
+    if not self.isGoodVolume then
+      -- New volume
+      if self.isAugmenting then
+        self.volume = math.min(self.volume + self.step,1)
+        if self.volume == 1 then self.isGoodVolume = true end
+      else
+        self.volume = math.max(self.volume - self.step,0)
+        if self.volume == 0 then self.isGoodVolume = true end
+      end
+      
+      -- Actual update
+      for i=1, #self.s do
+        self.s[i]:setVolume(self.volume)
+      end
     end
   end,
   

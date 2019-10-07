@@ -15,5 +15,7 @@ return Music {
       else self:play()
       end
     end
+    
+    self:updateVolume()
   end
 }

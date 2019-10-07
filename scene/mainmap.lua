@@ -34,7 +34,7 @@ function start:enter()
   local randomsource1 = Randomsources:new({"asset/audio/2_RandomLayer1.ogg"})
   local randomsource2 = Randomsources:new({"asset/audio/3_RandomLayer2.ogg"})
   local potoffire = Potoffire:new({"asset/audio/6_PotOfFire.ogg",
-                     "asset/audio/5_SufferingPotato.ogg"},960,540)
+                     "asset/audio/5_SufferingPotato.ogg"},968,629)
   local talkingpotato = Talkingpotato:new({"asset/audio/4_PotatoDialogue.ogg"})
   
   local tracks = {goodhealth,randomsource1,randomsource2,potoffire,talkingpotato}
