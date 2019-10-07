@@ -12,6 +12,7 @@ local Solid = require("entity.solid")
 local Hyke = require("entity.hyke")
 local bars = require("entity.hud.bars")
 local armor = require("entity.armor")
+local potato = require("entity.potato")
 
 local Goodhealth = require("entity.goodhealth")
 local Randomsources = require("entity.randomsources")
@@ -92,6 +93,13 @@ function start:enter()
 	for i=1, 3 do
 		local armorPart = armor:new(math.random(0, 1920), math.random(0, 1080), i)
 	end
+	
+	local potatoes = {
+	  potato1 = potato:new(100,200,1,"YOU COLD ? WE COLD GOOD"),
+	  potato2 = potato:new(300,200,2,"SACRIFICE POTATO SOON"),
+	  potato2 = potato:new(300,400,2,"POT OF FIRE GOOD !")
+	
+	}
 	
 	local testDialog = dialog:new({"POT OF FIRE TASTY AND GOOD"}, font.Potato[54])
 	
