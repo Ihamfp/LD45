@@ -10,7 +10,7 @@ return Entity {
 	x = 0, y = 0,
 	width = 0, height = 0,
 
-	--[[filter = function(item, other)
+	filter = function(item, other)
 		event.update = entities.update
 		local ret = "slide"
 		if other.noCollision or item.noCollision then
@@ -54,7 +54,7 @@ return Entity {
 			end
 		end
 		return ret
-	end,]]
+	end,
 
 	new = function(self, options)
 		Entity.new(self, options)

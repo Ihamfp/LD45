@@ -17,6 +17,8 @@ local uqt = require("ubiquitousse")
 local Shockwave = require("entity.shockwave")
 local Jumpable = require("entity.jumpable")
 
+local interactor = require("entity.interactor")
+
 local idleImg = love.graphics.newImage("asset/sprite/hyke.png")
 local shadow = love.graphics.newImage("asset/sprite/shadowthehedghog.png")
 
@@ -50,7 +52,7 @@ return SolidSprite {
 	
 	health = 100,
 	food = 150,
-	notCold = 200,
+	notCold = 150,
 	coldArmor = {[1] = false, [2] = false, [3] = false},
 
 	new = function(self, x, y, options)
@@ -78,6 +80,8 @@ return SolidSprite {
 			visible = false,
 			color = {0,0,0,.5}
 		})
+		
+		self.interactor = interactor:new()
 	end,
 
 	update = function(self, dt)

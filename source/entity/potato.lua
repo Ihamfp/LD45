@@ -13,14 +13,15 @@ return Solidsprite {
 
   
   new = function(self,x,y,potatoVariety,defaultText)
-    Solidsprite.new(self,x,y,{width=32,height=64})
     self.defaultText = defaultText
     self.sprite = sprites[potatoVariety]
-    
+    self.width = 32
+    self.height = 64
+    Solidsprite.new(self,x,y,{width=32,height=64})
   end,
   
   draw = function(self,dx,dy)
-    love.graphics.draw(self.sprite,dx,dy,0,.05,.05)
+    love.graphics.draw(self.sprite,self.x+dx,self.y+dy,0,.05,.05)
   end
 
 }
