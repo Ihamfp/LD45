@@ -12,6 +12,11 @@ local Hyke = require("entity.hyke")
 local bars = require("entity.hud.bars")
 local armor = require("entity.armor")
 
+local Goodhealth = require("entity.goodhealth")
+local Randomsources = require("entity.randomsources")
+local Potoffire = require("entity.potoffire")
+local Talkingpotato = require("entity.talkingpotato")
+
 local dialog = require("entity.hud.dialog")
 
 local start = scene.new("main")
@@ -24,17 +29,40 @@ start.effect = shine.vignette{
 function start:enter()
 	love.graphics.setBackgroundColor(0, 0, 0, 1)
 
+  local goodhealth = Goodhealth:new({"asset/audio/1_CorrectHealth.ogg"})
+  local randomsource1 = Randomsources:new({"asset/audio/2_RandomLayer1.ogg"})
+  local randomsource2 = Randomsources:new({"asset/audio/3_RandomLayer2.ogg"})
+  local potoffire = Potoffire:new({"asset/audio/6_PotOfFire.ogg",
+                     "asset/audio/5_SufferingPotato.ogg"},960,540)
+  local talkingpotato = Talkingpotato:new({"asset/audio/4_PotatoDialogue.ogg"})
+  local tracks = {goodhealth,randomsource1,randomsource2,potoffire,talkingpotato}
+
 	--[[start.zik = love.audio.newSource("asset/audio/Face_the_Genie_of_the_Forgotten_Themes_-_slow.ogg", "static")
 	start.zik:setLooping(true)
 	start.zik:play()]]
+	
+	-- Temporairement parce que faut tester la zik
+  for i=1, #tracks do
+   tracks[i]:start()
+  end
+	
 	function start:exit()
+	  for i=1, tracks do
+	   tracks[i]:trueStop()
+	  end
 		 --start.zik:stop()
-	end
+  end
 	function start:suspend()
+	  for i=1, #tracks do
+     tracks[i]:stop()
+    end
 		 --start.zik:stop()
 	end
 	function start:resume()
 		entities.set(start)
+		for i=1, tracks do
+     tracks[i]:start()
+    end
 		--start.zik:play()
 	end
 	
