@@ -30,16 +30,24 @@ return Sprite {
 		love.graphics.rectangle("fill", self.x, self.y, self.width*healthRatio, self.height)
 		
 		local foodRatio = (hyke.food / self.foodMax)
-		love.graphics.setColor(0, 1, 0)
-		love.graphics.rectangle("fill", self.x, self.y+self.height+self.spacing, self.width*foodRatio, self.height)
+		if foodRatio <= 1 then
+			love.graphics.setColor(0, 1, 0)
+			love.graphics.rectangle("fill", self.x, self.y+self.height+self.spacing, self.width*foodRatio, self.height)
+		end
 		
 		local coldRatio = (hyke.notCold / self.notColdMax)
-		love.graphics.setColor(coldRatio, 0, 1-coldRatio)
-		love.graphics.rectangle("fill", self.x, self.y+2*(self.height+self.spacing), self.width*coldRatio, self.height)
+		if coldRatio <= 1 then
+			love.graphics.setColor(coldRatio, 0, 1-coldRatio)
+			love.graphics.rectangle("fill", self.x, self.y+2*(self.height+self.spacing), self.width*coldRatio, self.height)
+		end
 		
 		love.graphics.setColor(0, 0, 0)
 		love.graphics.rectangle("line", self.x, self.y, self.width, self.height)
-		love.graphics.rectangle("line", self.x, self.y+self.height+self.spacing, self.width, self.height)
-		love.graphics.rectangle("line", self.x, self.y+2*(self.height+self.spacing), self.width, self.height)
+		if foodRatio <= 1 then
+			love.graphics.rectangle("line", self.x, self.y+self.height+self.spacing, self.width, self.height)
+		end
+		if coldRatio <= 1 then
+			love.graphics.rectangle("line", self.x, self.y+2*(self.height+self.spacing), self.width, self.height)
+		end
 	end
 }

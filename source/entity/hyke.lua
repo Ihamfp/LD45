@@ -49,8 +49,8 @@ return SolidSprite {
 	direction = "up",
 	
 	health = 100,
-	food = 100,
-	notCold = 100,
+	food = 150,
+	notCold = 200,
 	coldArmor = {[1] = false, [2] = false, [3] = false},
 
 	new = function(self, x, y, options)

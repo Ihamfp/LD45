@@ -8,6 +8,7 @@ local shine = require("shine")
 local BgParalax = require("entity.bgparalax")
 local ScrollBG = require("entity.scrollworld")
 
+local Solid = require("entity.solid")
 local Hyke = require("entity.hyke")
 local bars = require("entity.hud.bars")
 local armor = require("entity.armor")
@@ -71,8 +72,22 @@ function start:enter()
 	--bgmap.x = -320
 	--bgmap.y = -180
 	
-	local hyke = Hyke:new(640, 360)
+	local hyke = Hyke:new(960, 1000)
 	local bars = bars:new()
+	
+	-- collisions
+	local architecture = {
+		borderL = Solid:new({x=-2, y=0, width=2, height=1080}),
+		borderR = Solid:new({x=1920, y=0, width=2, height=1080}),
+		borderT = Solid:new({x=0, y=-2, width=1920, height=2}),
+		borderB = Solid:new({x=0, y=1080, width=1920, height=2}),
+		house1 = Solid:new({x=833, y=83, width=309, height=209}),
+		house2 = Solid:new({x=1331, y=330, width=309, height=209}),
+		house3 = Solid:new({x=1328, y=744, width=309, height=209}),
+		house4 = Solid:new({x=251, y=722, width=309, height=209}),
+		house5 = Solid:new({x=289, y=297, width=309, height=209}),
+		potoffire = Solid:new({x=904, y=565, width=127, height=125})
+	}
 	
 	for i=1, 3 do
 		local armorPart = armor:new(math.random(0, 1920), math.random(0, 1080), i)
